@@ -14,7 +14,8 @@
 <body>
     {% block body %}{% endblock %}
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <!-- Add version to bust caches on deploy; keep 'defer' so DOM is parsed before JS runs -->
+    <script defer src="{{ url_for('static', filename='js/script.js') }}?v=2025-08-26"></script>
 
     {% block scripts %}{% endblock %}
 </body>
