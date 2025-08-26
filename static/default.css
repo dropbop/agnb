@@ -10,6 +10,7 @@
     --container-padding: clamp(var(--spacing-unit), 5vw, 80px);
     --transition-smooth: cubic-bezier(0.6, 0, 0.2, 1);
     --mobile-header-height: 60px;
+    --desktop-header-height: 120px; /* Added for desktop */
     --mobile-nav-height: 64px;
 }
 
@@ -99,20 +100,20 @@ nav a:hover {
     transform: translateX(-10px);
 }
 
-/* Carousel */
+/* Carousel - FIXED FOR DESKTOP */
 .carousel-container {
-    height: calc(100vh - var(--mobile-header-height));
-    padding-top: var(--mobile-header-height);
+    height: 100vh; /* Full viewport height on desktop */
+    padding-top: var(--desktop-header-height); /* Space for header */
     position: relative;
     overflow: hidden;
-
+    
     /* Performance helpers */
     touch-action: pan-y;
     overscroll-behavior-y: contain;
 }
 
 .carousel {
-    height: 100%;
+    height: calc(100vh - var(--desktop-header-height)); /* Available height after header */
     display: flex;
     transition: transform 0.8s var(--transition-smooth);
     contain: paint;
@@ -186,7 +187,8 @@ nav a:hover {
     transform: skewX(-8deg) scale(1.1);
 }
 
-.arrow-button i {
+.arrow-button i,
+.arrow-button svg {
     transform: skewX(8deg);
     color: var(--color-text);
 }
@@ -422,6 +424,11 @@ nav a:hover {
     .carousel-container {
         height: calc(100svh - var(--mobile-header-height));
         padding-top: var(--mobile-header-height);
+    }
+    
+    /* Reset carousel height for mobile */
+    .carousel {
+        height: 100%;
     }
     
     .image-trio {
