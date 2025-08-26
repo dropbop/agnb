@@ -1,21 +1,28 @@
-// script.js
+/* AllGasNoBrakes Carousel + Contact Form
+   Refactor date: 2025-08-26
+   - Robust infinite carousel (defensive bounds + clone snapping)
+   - Safe preloading around the visible group
+   - No noisy console logs
+*/
+
 document.addEventListener('DOMContentLoaded', function () {
   // ================= CAROUSEL CODE =================
   const carousel = document.querySelector('.carousel');
   const prevButton = document.getElementById('prevButton');
   const nextButton = document.getElementById('nextButton');
 
-  let originalGroups = [];            // snapshot of initial groups (as clones)
-  let currentIndex = 1;               // start on first *real* slide (index 1 because of leading clone)
+  // State scoped to carousel only
+  let originalGroups = [];
+  let currentIndex = 1;               // start at first *real* slide (because we add a head clone)
   let autoScrollInterval = null;
   let interactionTimeout = null;
-  let isBuilding = false;             // guard while (re)building
-  let isDragging = false;             // guard swipe vs click
+  let isBuilding = false;
+  let isDragging = false;
 
-  const AUTO_DELAY = 5000;
-  const RESUME_DELAY = 10000;
+  const AUTO_DELAY = 5000;   // ms
+  const RESUME_DELAY = 10000; // ms
+  const TRANSITION_MS = 500;  // must match CSS transition
 
-  // Helper: triolist inside the live carousel
   function getAllTrios() {
     return carousel ? carousel.querySelectorAll('.image-trio') : [];
   }
@@ -39,45 +46,9 @@ document.addEventListener('DOMContentLoaded', function () {
     interactionTimeout = setTimeout(startAutoScroll, RESUME_DELAY);
   }
 
-  // Build/Rebuild from the original groups snapshot
-  function buildCarousel() {
-    if (!carousel) return;
-
-    isBuilding = true;
-    stopAutoScroll();
-
-    // Wipe and rebuild from snapshot
-    carousel.innerHTML = '';
-    originalGroups.forEach(g => carousel.appendChild(g.cloneNode(true)));
-
-    const groups = getAllTrios();
-    if (groups.length === 0) {
-      isBuilding = false;
-      return;
-    }
-
-    // Add edge clones for infinite effect (clone last to head, first to tail)
-    const lastClone = groups[groups.length - 1].cloneNode(true);
-    const firstClone = groups[0].cloneNode(true);
-    carousel.insertBefore(lastClone, carousel.firstChild);
-    carousel.appendChild(firstClone);
-
-    // GPU hints
-    carousel.style.willChange = 'transform';
-    carousel.style.backfaceVisibility = 'hidden';
-    carousel.style.webkitBackfaceVisibility = 'hidden';
-
-    currentIndex = 1; // first real slide
-    setTransform(false);
-    preloadAround();
-
-    isBuilding = false;
-    startAutoScroll(); // resume after a clean build
-  }
-
   function safeIdx(i, len) {
     if (len <= 0) return 0;
-    return (i % len + len) % len; // modulo that handles negatives
+    return (i % len + len) % len;
   }
 
   function setTransform(animate = true) {
@@ -85,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const total = getAllTrios().length;
     if (total === 0) return;
 
-    // Clamp to valid range
+    // Clamp
     if (currentIndex < 0) currentIndex = 0;
     if (currentIndex > total - 1) currentIndex = total - 1;
 
@@ -93,9 +64,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const offset = currentIndex * -100;
     carousel.style.transform = `translate3d(${offset}%, 0, 0)`;
 
-    // If we disabled transition, restore it next tick for future moves
     if (!animate) {
-      void carousel.offsetHeight; // force reflow
+      // force reflow so the next change can animate
+      void carousel.offsetHeight;
       carousel.style.transition = 'transform 0.5s ease-out';
     }
   }
@@ -116,8 +87,10 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!trio) return;
       trio.querySelectorAll('img').forEach(img => {
         if (img.dataset.preloaded) return;
+        const src = img.currentSrc || img.src;
+        if (!src) return;
         const temp = new Image();
-        temp.src = img.currentSrc || img.src;
+        temp.src = src;
         temp.loading = 'eager';
         temp.onload = () => { img.dataset.preloaded = 'true'; };
       });
@@ -128,12 +101,66 @@ document.addEventListener('DOMContentLoaded', function () {
       const imgs = carousel.querySelectorAll('img');
       imgs.forEach(img => {
         if (img.dataset.preloaded) return;
+        const src = img.currentSrc || img.src;
+        if (!src) return;
         const temp = new Image();
-        temp.src = img.currentSrc || img.src;
+        temp.src = src;
         temp.loading = 'lazy';
         temp.onload = () => { img.dataset.preloaded = 'true'; };
       });
     }, 1000);
+  }
+
+  function buildCarousel() {
+    if (!carousel) return;
+
+    isBuilding = true;
+    stopAutoScroll();
+
+    // Rebuild from the immutable snapshot of initial trios
+    carousel.innerHTML = '';
+    originalGroups.forEach(g => carousel.appendChild(g.cloneNode(true)));
+
+    const groups = getAllTrios();
+    const count = groups.length;
+
+    if (count === 0) {
+      isBuilding = false;
+      return;
+    }
+
+    // If only one real group, skip infinite loop clones
+    if (count === 1) {
+      // GPU hints
+      carousel.style.willChange = 'transform';
+      carousel.style.backfaceVisibility = 'hidden';
+      carousel.style.webkitBackfaceVisibility = 'hidden';
+
+      currentIndex = 0;
+      setTransform(false);
+      preloadAround();
+      isBuilding = false;
+      // No auto-scroll when there's nothing to scroll through
+      return;
+    }
+
+    // Add edge clones (clone last to head, first to tail)
+    const lastClone = groups[count - 1].cloneNode(true);
+    const firstClone = groups[0].cloneNode(true);
+    carousel.insertBefore(lastClone, carousel.firstChild);
+    carousel.appendChild(firstClone);
+
+    // GPU hints
+    carousel.style.willChange = 'transform';
+    carousel.style.backfaceVisibility = 'hidden';
+    carousel.style.webkitBackfaceVisibility = 'hidden';
+
+    currentIndex = 1; // first real slide
+    setTransform(false);
+    preloadAround();
+
+    isBuilding = false;
+    startAutoScroll();
   }
 
   function nextTrio() {
@@ -146,12 +173,12 @@ document.addEventListener('DOMContentLoaded', function () {
     preloadAround();
 
     // If we moved onto the tail clone, snap to first real slide
-    if (currentIndex === total - 1) {
-      setTimeout(() => {
+    setTimeout(() => {
+      if (currentIndex === total - 1) {
         currentIndex = 1;
         setTransform(false);
-      }, 500); // match transition duration
-    }
+      }
+    }, TRANSITION_MS);
   }
 
   function prevTrio() {
@@ -164,17 +191,17 @@ document.addEventListener('DOMContentLoaded', function () {
     preloadAround();
 
     // If we moved onto the head clone, snap to last real slide
-    if (currentIndex === 0) {
-      setTimeout(() => {
+    setTimeout(() => {
+      if (currentIndex === 0) {
         currentIndex = total - 2;
         setTransform(false);
-      }, 500); // match transition duration
-    }
+      }
+    }, TRANSITION_MS);
   }
 
-  // Initialize only if a carousel exists on this page (desktop layout)
+  // Initialize carousel only on pages that have it (desktop homepage)
   if (carousel) {
-    // Snapshot initial groups (as clones) BEFORE we start mutating the DOM
+    // Snapshot initial groups BEFORE we mutate the DOM
     originalGroups = Array.from(carousel.querySelectorAll('.image-trio'))
       .map(node => node.cloneNode(true));
 
@@ -209,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const diff = t.screenX - touchStartX;
 
       if (Math.abs(diff) > 10) {
-        // prevent vertical scroll once we know it's a swipe
+        // prevent vertical scroll once it's clearly a horizontal swipe
         e.preventDefault();
         isDragging = true;
       }
@@ -303,13 +330,13 @@ document.addEventListener('DOMContentLoaded', function () {
         body: json
       })
         .then(async (response) => {
-          let json;
+          let jsonResp;
           try {
-            json = await response.json();
-            console.log('Web3Forms API response:', json);
+            jsonResp = await response.json();
+            console.log('Web3Forms API response:', jsonResp);
           } catch (e) {
             console.error('Failed to parse API response', e);
-            json = { message: "Failed to parse response" };
+            jsonResp = { message: "Failed to parse response" };
           }
 
           if (formResult) {
@@ -318,8 +345,8 @@ document.addEventListener('DOMContentLoaded', function () {
               formResult.className = "form-result success";
               contactForm.reset();
             } else {
-              console.error('Error response:', response.status, json);
-              formResult.textContent = json.message || "Something went wrong!";
+              console.error('Error response:', response.status, jsonResp);
+              formResult.textContent = jsonResp.message || "Something went wrong!";
               formResult.className = "form-result error";
             }
           }
