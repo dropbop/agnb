@@ -16,35 +16,13 @@
     z-index: 100;
   }
   .portfolio-header .site-title { font-size: 1.25rem; }
-  .portfolio-header nav {
-    position: static; transform: none;
-    display: flex; gap: 12px;
-  }
-  .portfolio-main {
-    padding-top: calc(var(--mobile-header-height) + 12px);
-  }
-  /* Masonry via CSS multicolumn to preserve original ARs */
-  .masonry {
-    column-gap: 16px;
-    padding: 8px 16px 48px;
-    column-count: 1;
-  }
-  @media (min-width: 700px) {
-    .masonry { column-count: 2; column-gap: 20px; padding: 16px 24px 60px; }
-  }
-  @media (min-width: 1100px) {
-    .masonry { column-count: 3; column-gap: 24px; padding: 24px 40px 80px; }
-  }
-  .masonry-item {
-    break-inside: avoid;
-    margin-bottom: 16px;
-    display: block;
-  }
-  .masonry-item img {
-    width: 100%;
-    height: auto; /* keep original aspect ratio */
-    display: block;
-  }
+  .portfolio-header nav { position: static; transform: none; display: flex; gap: 12px; }
+  .portfolio-main { padding-top: calc(var(--mobile-header-height) + 12px); }
+  .masonry { column-gap: 16px; padding: 8px 16px 48px; column-count: 1; }
+  @media (min-width: 700px) { .masonry { column-count: 2; column-gap: 20px; padding: 16px 24px 60px; } }
+  @media (min-width: 1100px) { .masonry { column-count: 3; column-gap: 24px; padding: 24px 40px 80px; } }
+  .masonry-item { break-inside: avoid; margin-bottom: 16px; display: block; }
+  .masonry-item img { width: 100%; height: auto; display: block; }
 </style>
 {% endblock %}
 
@@ -64,7 +42,8 @@
         <img
           src="{{ url_for('get_media', subdir=subdir, filename=filename) }}"
           alt="Portfolio photo {{ loop.index }}"
-          loading="lazy">
+          loading="lazy"
+          onerror="this.onerror=null;this.src='{{ url_for('static', filename=subdir ~ '/' ~ filename) }}';">
       </a>
     {% endfor %}
   </section>
