@@ -3,8 +3,7 @@
 ## Licensing
 
 - **Code**: Public domain via [Unlicense](./LICENSE).
-- **Photos**: © <Photographer Name>. **All rights reserved.** See [assets/LICENSE-IMAGES.txt](./assets/LICENSE-IMAGES.txt).
-- By contributing, you agree your code changes are licensed under the Unlicense.
+- **Photos**: © <Jameson Waugh>. **All rights reserved.**
 
 ## How to Upload New Photos
 
