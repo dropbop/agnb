@@ -2,16 +2,19 @@
    Refactor date: 2025-08-26
    - Robust infinite carousel (defensive bounds + clone snapping)
    - Safe preloading around the visible group
-   - No noisy console logs
+   - Firefox flex/grid min-height guards handled via CSS
+   - DEBUG logs for quick verification
 */
 
 document.addEventListener('DOMContentLoaded', function () {
+  const DEBUG = true;
+  const log = (...args) => { if (DEBUG) console.log('[carousel]', ...args); };
+
   // ================= CAROUSEL CODE =================
   const carousel = document.querySelector('.carousel');
   const prevButton = document.getElementById('prevButton');
   const nextButton = document.getElementById('nextButton');
 
-  // State scoped to carousel only
   let originalGroups = [];
   let currentIndex = 1;               // start at first *real* slide (because we add a head clone)
   let autoScrollInterval = null;
@@ -19,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let isBuilding = false;
   let isDragging = false;
 
-  const AUTO_DELAY = 5000;   // ms
+  const AUTO_DELAY = 5000;    // ms
   const RESUME_DELAY = 10000; // ms
   const TRANSITION_MS = 500;  // must match CSS transition
 
@@ -60,15 +63,20 @@ document.addEventListener('DOMContentLoaded', function () {
     if (currentIndex < 0) currentIndex = 0;
     if (currentIndex > total - 1) currentIndex = total - 1;
 
-    carousel.style.transition = animate ? 'transform 0.5s ease-out' : 'none';
     const offset = currentIndex * -100;
-    carousel.style.transform = `translate3d(${offset}%, 0, 0)`;
 
     if (!animate) {
+      carousel.style.transition = 'none';
+      carousel.style.transform = `translate3d(${offset}%, 0, 0)`;
       // force reflow so the next change can animate
       void carousel.offsetHeight;
       carousel.style.transition = 'transform 0.5s ease-out';
+    } else {
+      carousel.style.transition = 'transform 0.5s ease-out';
+      carousel.style.transform = `translate3d(${offset}%, 0, 0)`;
     }
+
+    log('setTransform', { currentIndex, total, animate, offsetPercent: offset });
   }
 
   function preloadAround() {
@@ -81,7 +89,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const ni = safeIdx(vi + 1, total);
     const pi = safeIdx(vi - 1, total);
 
-    // Eager preload visible + neighbors
     [vi, ni, pi].forEach(idx => {
       const trio = allTrios[idx];
       if (!trio) return;
@@ -96,7 +103,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
 
-    // Then queue the rest with lower priority
     setTimeout(() => {
       const imgs = carousel.querySelectorAll('img');
       imgs.forEach(img => {
@@ -123,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const groups = getAllTrios();
     const count = groups.length;
+    log('buildCarousel: initial groups', count);
 
     if (count === 0) {
       isBuilding = false;
@@ -131,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // If only one real group, skip infinite loop clones
     if (count === 1) {
-      // GPU hints
       carousel.style.willChange = 'transform';
       carousel.style.backfaceVisibility = 'hidden';
       carousel.style.webkitBackfaceVisibility = 'hidden';
@@ -140,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
       setTransform(false);
       preloadAround();
       isBuilding = false;
-      // No auto-scroll when there's nothing to scroll through
+      log('buildCarousel: single group; skipping clones');
       return;
     }
 
@@ -150,7 +156,6 @@ document.addEventListener('DOMContentLoaded', function () {
     carousel.insertBefore(lastClone, carousel.firstChild);
     carousel.appendChild(firstClone);
 
-    // GPU hints
     carousel.style.willChange = 'transform';
     carousel.style.backfaceVisibility = 'hidden';
     carousel.style.webkitBackfaceVisibility = 'hidden';
@@ -161,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     isBuilding = false;
     startAutoScroll();
+    log('buildCarousel: finished; total with clones', getAllTrios().length);
   }
 
   function nextTrio() {
@@ -172,13 +178,14 @@ document.addEventListener('DOMContentLoaded', function () {
     setTransform(true);
     preloadAround();
 
-    // If we moved onto the tail clone, snap to first real slide
     setTimeout(() => {
       if (currentIndex === total - 1) {
         currentIndex = 1;
         setTransform(false);
       }
     }, TRANSITION_MS);
+
+    log('nextTrio ->', currentIndex);
   }
 
   function prevTrio() {
@@ -190,13 +197,14 @@ document.addEventListener('DOMContentLoaded', function () {
     setTransform(true);
     preloadAround();
 
-    // If we moved onto the head clone, snap to last real slide
     setTimeout(() => {
       if (currentIndex === 0) {
         currentIndex = total - 2;
         setTransform(false);
       }
     }, TRANSITION_MS);
+
+    log('prevTrio ->', currentIndex);
   }
 
   // Initialize carousel only on pages that have it (desktop homepage)
@@ -204,6 +212,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // Snapshot initial groups BEFORE we mutate the DOM
     originalGroups = Array.from(carousel.querySelectorAll('.image-trio'))
       .map(node => node.cloneNode(true));
+
+    log('init: found image-trio groups', originalGroups.length);
 
     // Buttons
     if (prevButton) prevButton.addEventListener('click', () => {
@@ -225,7 +235,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const t = e.changedTouches[0];
       touchStartX = t.screenX;
       touchStartTime = Date.now();
-      // Pause animation during drag
       carousel.style.transition = 'none';
       resetAutoScrollTimer();
     }, { passive: true });
@@ -236,7 +245,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const diff = t.screenX - touchStartX;
 
       if (Math.abs(diff) > 10) {
-        // prevent vertical scroll once it's clearly a horizontal swipe
         e.preventDefault();
         isDragging = true;
       }
@@ -251,14 +259,13 @@ document.addEventListener('DOMContentLoaded', function () {
       if (isBuilding) return;
       const diff = e.changedTouches[0].screenX - touchStartX;
       const timeDiff = Date.now() - touchStartTime;
-      // Restore transition
       carousel.style.transition = 'transform 0.5s ease-out';
 
       const isSwipe = Math.abs(diff) > 50 || (Math.abs(diff) > 20 && timeDiff < 300);
       if (isSwipe) {
         diff < 0 ? nextTrio() : prevTrio();
       } else {
-        setTransform(true); // snap back
+        setTransform(true);
       }
       resetAutoScrollTimer();
     }, { passive: true });
@@ -284,6 +291,8 @@ document.addEventListener('DOMContentLoaded', function () {
         buildCarousel();
       }, 250);
     });
+  } else {
+    log('init: no .carousel on this page');
   }
 
   // ================= CONTACT FORM CODE =================
@@ -294,18 +303,15 @@ document.addEventListener('DOMContentLoaded', function () {
     contactForm.addEventListener('submit', function (e) {
       e.preventDefault(); // Prevent the form from submitting normally
 
-      // Show pending message
       if (formResult) {
         formResult.textContent = "Sending your message...";
         formResult.className = "form-result pending";
         formResult.style.display = "block";
       }
 
-      // Get form data
       const formData = new FormData(contactForm);
       const object = Object.fromEntries(formData);
 
-      // Check if access key is present and not empty
       const accessKey = object.access_key;
       if (!accessKey) {
         console.error("Web3Forms access key is missing or empty");
@@ -316,11 +322,9 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      // Debug log (kept)
       console.log('Submitting form with payload:', object);
       const json = JSON.stringify(object);
 
-      // Submit to Web3Forms API
       fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: {
@@ -360,7 +364,6 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .finally(function () {
           if (formResult) {
-            // Hide the message after 5 seconds
             setTimeout(() => {
               formResult.style.display = "none";
             }, 5000);
