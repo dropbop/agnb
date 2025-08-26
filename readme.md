@@ -1,10 +1,5 @@
 # AllGasNoBrakes Photography
 
-## Licensing
-
-- **Code**: Public domain via [Unlicense](./LICENSE).
-- **Photos**: © <Jameson Waugh>. **All rights reserved.**
-
 ## How to Upload New Photos
 
 1. Navigate to the `static/photos` directory in this repository
