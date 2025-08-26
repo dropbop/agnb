@@ -105,12 +105,17 @@ nav a:hover {
     padding-top: var(--mobile-header-height);
     position: relative;
     overflow: hidden;
+
+    /* Performance helpers */
+    touch-action: pan-y;
+    overscroll-behavior-y: contain;
 }
 
 .carousel {
     height: 100%;
     display: flex;
     transition: transform 0.8s var(--transition-smooth);
+    contain: paint;
 }
 
 .image-trio {
@@ -120,6 +125,7 @@ nav a:hover {
     grid-template-columns: repeat(3, 1fr);
     gap: calc(var(--spacing-unit) * 2);
     padding: 0 var(--container-padding);
+    contain: paint;
 }
 
 /* Image Wrapper Styles */
@@ -382,26 +388,39 @@ nav a:hover {
 @media (max-width: 768px) {
     /* Header & Navigation Adjustments */
     header {
-        position: absolute;
+        position: fixed;
         height: var(--mobile-header-height);
         padding: 0 16px;
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
+        background: rgba(10,10,10,0.8);
+        backdrop-filter: blur(6px);
+        z-index: 100;
     }
     
     .site-title {
         font-size: 1.5rem;
-        text-align: center;
+        text-align: left;
     }
     
-    nav,
-    .controls {
-        display: none;
+    /* Keep carousel controls hidden on mobile; show a simple nav */
+    .controls { display: none; }
+    nav {
+        position: static;
+        right: auto;
+        transform: none;
+        display: flex;
+        gap: 12px;
+    }
+    nav a {
+        margin: 0;
+        padding: 8px 12px;
     }
     
+    /* Use stable viewport units to avoid iOS 100vh jumps */
     .carousel-container {
-        height: calc(100vh - var(--mobile-header-height));
+        height: calc(100svh - var(--mobile-header-height));
         padding-top: var(--mobile-header-height);
     }
     
@@ -422,7 +441,6 @@ nav a:hover {
     }
     
     .image-wrapper a {
-        /* Maintain clickable area */
         display: block;
         width: 100%;
         height: 100%;
@@ -441,4 +459,28 @@ nav a:hover {
         width: 100%;
         justify-content: center;
     }
+
+    /* Mobile hero grid (no auto-scroll) */
+    .mobile-hero { padding-top: var(--mobile-header-height); }
+    .mobile-hero-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 8px 12px 24px;
+    }
+    @media (min-width: 480px) and (max-width: 768px) {
+        .mobile-hero-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    }
+    .mobile-hero-item img {
+        width: 100%;
+        height: auto; /* preserve original aspect ratio */
+        display: block;
+    }
+}
+
+/* Prefer dvh if available for even more stable height */
+@supports (height: 100dvh) {
+  @media (max-width: 768px) {
+    .carousel-container { height: calc(100dvh - var(--mobile-header-height)); }
+  }
 }

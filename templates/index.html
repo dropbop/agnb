@@ -1,10 +1,10 @@
-<!-- index.html -->
+<!-- templates/index.html -->
 {% extends "base.html" %}
 
 {% block head %}
-    <!-- Add viewport meta tag if not present -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Keep existing font imports -->
+    <!-- Viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Fonts -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
 {% endblock %}
@@ -14,25 +14,46 @@
         <div class="header-content">
             <h1 class="site-title">AllGasNoBrakes</h1>
             <nav>
-                <a href="#gallery">Portfolio</a>
+                <a href="{{ url_for('portfolio') }}">Portfolio</a>
                 <a href="#contact">Contact</a>
             </nav>
         </div>
     </header>
 
     <main>
-        <!-- Hero Carousel -->
+        {% if is_mobile %}
+        <!-- Mobile hero: curated grid (no auto-scroll) -->
+        {% set mobile_list = mobile_photos if mobile_photos|length > 0 else desktop_photos %}
+        {% set mobile_subdir = 'photos_mobile' if mobile_photos|length > 0 else 'photos' %}
+        <section class="mobile-hero" id="gallery">
+            <div class="mobile-hero-grid">
+                {% for filename in mobile_list %}
+                <div class="mobile-hero-item">
+                    <a href="{{ url_for('view_image', subdir=mobile_subdir, filename=filename) }}">
+                        <img
+                            src="{{ url_for('get_media', subdir=mobile_subdir, filename=filename) }}"
+                            alt="Automotive Photography {{ loop.index }}"
+                            loading="lazy">
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% else %}
+        <!-- Desktop hero: existing 3-up auto-scrolling carousel -->
+        {% set desktop_list = desktop_photos %}
         <section class="carousel-container" id="gallery">
             <div class="carousel">
-                {% for i in range(0, photos|length, 3) %}
+                {% for i in range(0, desktop_list|length, 3) %}
                 <div class="image-trio">
                     {% for j in range(3) %}
-                        {% if i + j < photos|length %}
+                        {% if i + j < desktop_list|length %}
                         <div class="image-wrapper">
-                            <a href="{{ url_for('view_image', filename=photos[i + j]) }}">
-                                <img src="{{ url_for('static', filename='photos/' + photos[i + j]) }}"
-                                     alt="Automotive Photography {{ i + j + 1 }}"
-                                     loading="{% if i == 0 and j == 0 %}eager{% else %}lazy{% endif %}">
+                            <a href="{{ url_for('view_image', subdir='photos', filename=desktop_list[i + j]) }}">
+                                <img
+                                    src="{{ url_for('get_media', subdir='photos', filename=desktop_list[i + j]) }}"
+                                    alt="Automotive Photography {{ i + j + 1 }}"
+                                    loading="{% if i == 0 and j == 0 %}eager{% else %}lazy{% endif %}">
                             </a>
                         </div>
                         {% endif %}
@@ -44,16 +65,17 @@
             <div class="controls">
                 <button class="arrow-button prev" aria-label="Previous" id="prevButton">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6"/>
+                        <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                 </button>
                 <button class="arrow-button next" aria-label="Next" id="nextButton">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6"/>
+                        <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
                 </button>
             </div>
         </section>
+        {% endif %}
 
         <!-- Contact Section -->
         <section id="contact" class="contact">
@@ -61,8 +83,8 @@
                 <div class="contact-info">
                     <p class="contact-item">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="5" width="18" height="14" rx="2"/>
-                            <path d="m3 7 9 6 9-6"/>
+                            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                            <path d="m3 7 9 6 9-6"></path>
                         </svg>
                         <a href="mailto:AllGasNoBrakes@tuta.com" class="contact-link">
                             AllGasNoBrakes@tuta.com
@@ -70,9 +92,9 @@
                     </p>
                     <p class="contact-item">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="18" height="18" x="3" y="3" rx="4.5"/>
-                            <circle cx="12" cy="12" r="3.5"/>
-                            <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" stroke="none"/>
+                            <rect width="18" height="18" x="3" y="3" rx="4.5"></rect>
+                            <circle cx="12" cy="12" r="3.5"></circle>
+                            <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" stroke="none"></circle>
                         </svg>
                         <a href="https://instagram.com/AllGasNoBrakesMedia"
                            target="_blank"
