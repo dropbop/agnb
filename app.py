@@ -4,10 +4,8 @@ import os
 # Environment detection
 IS_DEVELOPMENT = os.environ.get('FLASK_ENV') == 'development'
 
-app = Flask(__name__)
-
-# For Vercel
-app.config['STATIC_FOLDER'] = 'static'
+# Be explicit about static folder for clarity on Vercel and locally
+app = Flask(__name__, static_folder="static", static_url_path="/static")
 
 # Media guards
 ALLOWED_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp')
@@ -28,7 +26,7 @@ def page_not_found(e):
     return redirect(url_for('index'))
 
 
-def _list_images(subdir):
+def _list_images(subdir: str):
     """Return sorted list of image filenames from /static/<subdir>."""
     dir_path = os.path.join(app.static_folder, subdir)
     if not os.path.isdir(dir_path):
@@ -104,11 +102,11 @@ def view_image(subdir, filename):
 def get_media(subdir, filename):
     if subdir not in ALLOWED_MEDIA_DIRS:
         abort(404)
-    # Long-cache static assets
+    # Long-cache static assets (Flask 2.0 uses max_age, not cache_timeout)
     return send_from_directory(
         os.path.join(app.static_folder, subdir),
         filename,
-        cache_timeout=31536000  # 1 year
+        max_age=31536000  # 1 year
     )
 
 
