@@ -76,6 +76,19 @@
                     </svg>
                 </button>
             </div>
+
+            <!-- Graceful fallback if JS disabled or crashes -->
+            <noscript>
+                <div class="mobile-hero-grid" style="padding-top: var(--mobile-header-height);">
+                    {% for filename in desktop_list %}
+                    <div class="mobile-hero-item">
+                        <img
+                          src="{{ url_for('get_media', subdir='photos', filename=filename) }}"
+                          alt="Automotive Photography {{ loop.index }}">
+                    </div>
+                    {% endfor %}
+                </div>
+            </noscript>
         </section>
         {% endif %}
 
