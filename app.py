@@ -138,7 +138,7 @@ def debug():
 
     env_vars = {}
     for key, value in os.environ.items():
-        if not key.lower().startsWith(('secret_', 'api_', 'password', 'token', 'key')):
+        if not key.lower().startswith(('secret_', 'api_', 'password', 'token', 'key')):
             env_vars[key] = value
         elif key.lower() == 'web3forms_key' and value:
             env_vars[key] = value[:5] + '***' if len(value) > 5 else '***'
