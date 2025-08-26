@@ -10,7 +10,7 @@
     --container-padding: clamp(var(--spacing-unit), 5vw, 80px);
     --transition-smooth: cubic-bezier(0.6, 0, 0.2, 1);
     --mobile-header-height: 60px;
-    --desktop-header-height: 120px; /* Added for desktop */
+    --desktop-header-height: 120px;
     --mobile-nav-height: 64px;
 }
 
@@ -19,6 +19,10 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
 }
 
 body {
@@ -100,23 +104,31 @@ nav a:hover {
     transform: translateX(-10px);
 }
 
-/* Carousel - FIXED FOR DESKTOP */
+/* =========================
+   Desktop Carousel (fixed)
+   ========================= */
 .carousel-container {
-    height: 100vh; /* Full viewport height on desktop */
-    padding-top: var(--desktop-header-height); /* Space for header */
+    /* Fill the viewport and reserve space for the fixed header */
+    height: 100vh;
+    padding-top: var(--desktop-header-height);
     position: relative;
     overflow: hidden;
-    
+
     /* Performance helpers */
     touch-action: pan-y;
     overscroll-behavior-y: contain;
+
+    /* Important for Firefox: allow children to size properly */
+    min-height: 0;
 }
 
 .carousel {
-    height: calc(100vh - var(--desktop-header-height)); /* Available height after header */
+    height: calc(100vh - var(--desktop-header-height));
     display: flex;
     transition: transform 0.8s var(--transition-smooth);
     contain: paint;
+    overflow: hidden;      /* keep slides clipped */
+    min-height: 0;         /* crucial for flex/grid interplay in Firefox */
 }
 
 .image-trio {
@@ -124,9 +136,12 @@ nav a:hover {
     height: 100%;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    /* Fill the row to the container’s full height; avoid auto-height collapse */
+    grid-template-rows: minmax(0, 1fr);
     gap: calc(var(--spacing-unit) * 2);
     padding: 0 var(--container-padding);
     contain: paint;
+    min-height: 0; /* Firefox: allow grid to actually use the available height */
 }
 
 /* Image Wrapper Styles */
@@ -136,14 +151,7 @@ nav a:hover {
     height: 100%;
     transform: skewX(-5deg) scale(0.95);
     transition: transform 0.4s var(--transition-smooth);
-}
-
-.image-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transform: skewX(5deg) scale(1.2);
-    transition: transform 0.4s var(--transition-smooth);
+    min-height: 0; /* Firefox safety */
 }
 
 .image-wrapper a {
@@ -151,6 +159,15 @@ nav a:hover {
     width: 100%;
     height: 100%;
     cursor: pointer;
+}
+
+.image-wrapper img {
+    display: block; /* avoid inline-gap */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: skewX(5deg) scale(1.2);
+    transition: transform 0.4s var(--transition-smooth);
 }
 
 .image-wrapper:hover {
@@ -401,51 +418,35 @@ nav a:hover {
         z-index: 100;
     }
     
-    .site-title {
-        font-size: 1.5rem;
-        text-align: left;
-    }
+    .site-title { font-size: 1.5rem; text-align: left; }
     
-    /* Keep carousel controls hidden on mobile; show a simple nav */
+    /* Hide carousel controls on mobile; show a simple nav */
     .controls { display: none; }
-    nav {
-        position: static;
-        right: auto;
-        transform: none;
-        display: flex;
-        gap: 12px;
-    }
-    nav a {
-        margin: 0;
-        padding: 8px 12px;
-    }
+    nav { position: static; right: auto; transform: none; display: flex; gap: 12px; }
+    nav a { margin: 0; padding: 8px 12px; }
     
     /* Use stable viewport units to avoid iOS 100vh jumps */
     .carousel-container {
         height: calc(100svh - var(--mobile-header-height));
         padding-top: var(--mobile-header-height);
+        min-height: 0;
     }
     
     /* Reset carousel height for mobile */
-    .carousel {
-        height: 100%;
-    }
+    .carousel { height: 100%; }
     
     .image-trio {
         grid-template-columns: 1fr;
+        grid-template-rows: auto;
         padding: 0;
     }
     
     /* Image Wrapper Mobile Overrides */
     .image-wrapper,
-    .image-wrapper:hover {
-        transform: none;
-    }
+    .image-wrapper:hover { transform: none; }
     
     .image-wrapper img,
-    .image-wrapper:hover img {
-        transform: none;
-    }
+    .image-wrapper:hover img { transform: none; }
     
     .image-wrapper a {
         display: block;
@@ -454,18 +455,9 @@ nav a:hover {
     }
     
     /* Mobile Contact Section */
-    .contact {
-        padding: 32px 16px;
-    }
-    
-    .contact-form-container {
-        max-width: 100%;
-    }
-    
-    .submit-button {
-        width: 100%;
-        justify-content: center;
-    }
+    .contact { padding: 32px 16px; }
+    .contact-form-container { max-width: 100%; }
+    .submit-button { width: 100%; justify-content: center; }
 
     /* Mobile hero grid (no auto-scroll) */
     .mobile-hero { padding-top: var(--mobile-header-height); }
