@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // ======== ELEMENT HOOKS (no optional chaining for older Safari) ========
+    // ======== ELEMENT HOOKS ========
     const desktopSection = document.getElementById('desktop-gallery');
     const desktopCarousel = desktopSection ? desktopSection.querySelector('.carousel') : null;
     const mobileSection = document.getElementById('mobile-gallery');
@@ -8,29 +8,36 @@ document.addEventListener('DOMContentLoaded', function () {
     const prevButton = document.getElementById('prevButton');
     const nextButton = document.getElementById('nextButton');
 
-    // ======== EXPERIENCE SWITCH (JS decides; CSS still provides fallback) ========
-    const mql = window.matchMedia('(max-width: 768px)');
+    // ======== EXPERIENCE SWITCH ========
+    const widthQuery = window.matchMedia('(max-width: 768px)');
+    const coarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)');
 
-    let variant = mql.matches ? 'mobile' : 'desktop';
+    // Prefer mobile on touch devices; else fall back to width
+    let variant = (coarsePointer.matches || widthQuery.matches) ? 'mobile' : 'desktop';
     document.body.classList.toggle('is-mobile', variant === 'mobile');
 
     // Load photos + render appropriate experience
     loadAndRender(variant);
 
-    // Switch if viewport crosses breakpoint (with legacy addListener fallback)
-    function onMediaChange(e) {
-        const newVariant = e.matches ? 'mobile' : 'desktop';
+    function onMediaChange() {
+        const newVariant = (coarsePointer.matches || widthQuery.matches) ? 'mobile' : 'desktop';
         if (newVariant === variant) return;
         variant = newVariant;
         document.body.classList.toggle('is-mobile', variant === 'mobile');
-        teardownDesktop(); // stop timers if any
+        teardownDesktop();
         clearContainers();
         loadAndRender(variant);
     }
-    if (typeof mql.addEventListener === 'function') {
-        mql.addEventListener('change', onMediaChange);
-    } else if (typeof mql.addListener === 'function') {
-        mql.addListener(onMediaChange); // iOS 12/13
+    if (typeof widthQuery.addEventListener === 'function') {
+        widthQuery.addEventListener('change', onMediaChange);
+    } else if (typeof widthQuery.addListener === 'function') {
+        widthQuery.addListener(onMediaChange);
+    }
+    // Coarse pointer usually won't change at runtime, but wire it just in case
+    if (typeof coarsePointer.addEventListener === 'function') {
+        coarsePointer.addEventListener('change', onMediaChange);
+    } else if (typeof coarsePointer.addListener === 'function') {
+        coarsePointer.addListener(onMediaChange);
     }
 
     // ======== API ========
@@ -56,10 +63,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function clearContainers() {
         if (desktopCarousel) desktopCarousel.innerHTML = '';
         if (mobileList) mobileList.innerHTML = '';
-        if (desktopSection) desktopSection.classList.remove('is-ready');
+        if (desktopSection) {
+            desktopSection.classList.remove('is-ready');
+            desktopSection.style.display = 'none'; // ensure hidden until ready
+        }
     }
 
-    // ======== DESKTOP CAROUSEL (trimmed, no touch handlers) ========
+    // ======== DESKTOP CAROUSEL ========
     let currentIndex = 1; // account for clones
     let autoScrollInterval = null;
     let interactionTimeout = null;
@@ -71,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!desktopSection || !desktopCarousel) return;
         if (!photos.length) {
             desktopSection.classList.remove('is-ready');
+            desktopSection.style.display = 'none';
             return;
         }
 
@@ -107,6 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!realGroups.length) {
             desktopSection.classList.remove('is-ready');
+            desktopSection.style.display = 'none';
             return;
         }
 
@@ -136,8 +148,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Preload visibles
         preloadVisibleAndAdjacentImages(realGroups.length);
 
-        // Mark as ready so CSS shows the desktop gallery on large screens
+        // Mark as ready and show (desktop only). CSS will keep it hidden on small widths.
         desktopSection.classList.add('is-ready');
+        desktopSection.style.display = 'block';
     }
 
     function updateCarousel(animate, realLen) {
@@ -243,12 +256,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 1000);
     }
 
-    // ======== MOBILE GALLERY (clean, curated, mobile-first) ========
+    // ======== MOBILE GALLERY ========
     function renderMobile(photos) {
         if (!mobileSection || !mobileList) return;
-        if (!photos.length) {
-            return;
-        }
+        if (!photos.length) return;
 
         // Build simple, performant mobile list
         const frag = document.createDocumentFragment();
