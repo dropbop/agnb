@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block title %}AllGasNoBrakes - {{ filename }}{% endblock %}
 
 {% block head %}
@@ -24,7 +23,6 @@
         justify-content: center;
         margin-top: 20px;
         gap: 20px;
-        flex-wrap: wrap;
     }
     .control-button {
         background: rgba(255, 255, 255, 0.1);
@@ -44,18 +42,15 @@
         background: var(--color-accent);
         transform: skewX(-8deg) scale(1.1);
     }
-    .control-button span { transform: skewX(8deg); }
+    .control-button span {
+        transform: skewX(8deg);
+    }
 </style>
 {% endblock %}
 
 {% block body %}
 <div class="fullsize-container">
-    <img
-      src="{{ url_for('get_media', subdir=subdir, filename=filename) }}"
-      alt="{{ filename }}"
-      class="fullsize-image"
-      onerror="this.onerror=null;this.src='{{ url_for('static', filename=subdir ~ '/' ~ filename) }}';">
-    
+    <img src="{{ url_for('get_photo', variant=variant, filename=filename) }}" alt="{{ filename }}" class="fullsize-image">
     <div class="image-controls">
         <a href="{{ url_for('index') }}" class="control-button">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -64,17 +59,7 @@
                 <path d="M12 15l-3-3 3-3"></path>
                 <path d="M8 12h8"></path>
             </svg>
-            <span>Back to Home</span>
-        </a>
-
-        <a href="{{ url_for('portfolio') }}" class="control-button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-            <span>View Portfolio</span>
+            <span>Back to Gallery</span>
         </a>
     </div>
 </div>

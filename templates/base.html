@@ -2,21 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Single, accessible viewport meta -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="AllGasNoBrakes Photography - Professional automotive photography capturing speed, style, and precision">
 
+    <meta name="description" content="AllGasNoBrakes Photography - Professional automotive photography capturing speed, style, and precision">
     <title>{% block title %}AllGasNoBrakes Photography{% endblock %}</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='default.css') }}">
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
 
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='default.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
     {% block body %}{% endblock %}
 
-    <!-- Add version to bust caches on deploy; keep 'defer' so DOM is parsed before JS runs -->
-    <script defer src="{{ url_for('static', filename='js/script.js') }}?v=2025-08-26"></script>
-
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

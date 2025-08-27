@@ -1,374 +1,328 @@
-/* AllGasNoBrakes Carousel + Contact Form
-   Refactor date: 2025-08-26
-   - Robust infinite carousel (defensive bounds + clone snapping)
-   - Safe preloading around the visible group
-   - Firefox flex/grid min-height guards handled via CSS
-   - DEBUG logs for quick verification
-*/
+document.addEventListener('DOMContentLoaded', () => {
+    // ======== ELEMENT HOOKS ========
+    const desktopSection = document.getElementById('desktop-gallery');
+    const desktopCarousel = desktopSection?.querySelector('.carousel');
+    const mobileSection = document.getElementById('mobile-gallery');
+    const mobileList = mobileSection?.querySelector('.mobile-list');
 
-document.addEventListener('DOMContentLoaded', function () {
-  const DEBUG = true;
-  const log = (...args) => { if (DEBUG) console.log('[carousel]', ...args); };
+    const prevButton = document.getElementById('prevButton');
+    const nextButton = document.getElementById('nextButton');
 
-  // ================= CAROUSEL CODE =================
-  const carousel = document.querySelector('.carousel');
-  const prevButton = document.getElementById('prevButton');
-  const nextButton = document.getElementById('nextButton');
+    // ======== EXPERIENCE SWITCH (JS decides) ========
+    const mql = window.matchMedia('(max-width: 768px)');
 
-  let originalGroups = [];
-  let currentIndex = 1;               // start at first *real* slide (because we add a head clone)
-  let autoScrollInterval = null;
-  let interactionTimeout = null;
-  let isBuilding = false;
-  let isDragging = false;
+    let variant = mql.matches ? 'mobile' : 'desktop';
+    document.body.classList.toggle('is-mobile', variant === 'mobile');
 
-  const AUTO_DELAY = 5000;    // ms
-  const RESUME_DELAY = 10000; // ms
-  const TRANSITION_MS = 500;  // must match CSS transition
+    // Load photos + render appropriate experience
+    loadAndRender(variant);
 
-  function getAllTrios() {
-    return carousel ? carousel.querySelectorAll('.image-trio') : [];
-  }
-
-  function stopAutoScroll() {
-    if (autoScrollInterval) {
-      clearInterval(autoScrollInterval);
-      autoScrollInterval = null;
-    }
-  }
-
-  function startAutoScroll() {
-    if (!autoScrollInterval) {
-      autoScrollInterval = setInterval(nextTrio, AUTO_DELAY);
-    }
-  }
-
-  function resetAutoScrollTimer() {
-    stopAutoScroll();
-    clearTimeout(interactionTimeout);
-    interactionTimeout = setTimeout(startAutoScroll, RESUME_DELAY);
-  }
-
-  function safeIdx(i, len) {
-    if (len <= 0) return 0;
-    return (i % len + len) % len;
-  }
-
-  function setTransform(animate = true) {
-    if (!carousel) return;
-    const total = getAllTrios().length;
-    if (total === 0) return;
-
-    // Clamp
-    if (currentIndex < 0) currentIndex = 0;
-    if (currentIndex > total - 1) currentIndex = total - 1;
-
-    const offset = currentIndex * -100;
-
-    if (!animate) {
-      carousel.style.transition = 'none';
-      carousel.style.transform = `translate3d(${offset}%, 0, 0)`;
-      // force reflow so the next change can animate
-      void carousel.offsetHeight;
-      carousel.style.transition = 'transform 0.5s ease-out';
-    } else {
-      carousel.style.transition = 'transform 0.5s ease-out';
-      carousel.style.transform = `translate3d(${offset}%, 0, 0)`;
-    }
-
-    log('setTransform', { currentIndex, total, animate, offsetPercent: offset });
-  }
-
-  function preloadAround() {
-    if (!carousel) return;
-    const allTrios = getAllTrios();
-    const total = allTrios.length;
-    if (total === 0) return;
-
-    const vi = safeIdx(currentIndex, total);
-    const ni = safeIdx(vi + 1, total);
-    const pi = safeIdx(vi - 1, total);
-
-    [vi, ni, pi].forEach(idx => {
-      const trio = allTrios[idx];
-      if (!trio) return;
-      trio.querySelectorAll('img').forEach(img => {
-        if (img.dataset.preloaded) return;
-        const src = img.currentSrc || img.src;
-        if (!src) return;
-        const temp = new Image();
-        temp.src = src;
-        temp.loading = 'eager';
-        temp.onload = () => { img.dataset.preloaded = 'true'; };
-      });
+    // Switch if viewport crosses breakpoint
+    mql.addEventListener('change', (e) => {
+        const newVariant = e.matches ? 'mobile' : 'desktop';
+        if (newVariant === variant) return;
+        variant = newVariant;
+        document.body.classList.toggle('is-mobile', variant === 'mobile');
+        teardownDesktop(); // stop timers if any
+        clearContainers();
+        loadAndRender(variant);
     });
 
-    setTimeout(() => {
-      const imgs = carousel.querySelectorAll('img');
-      imgs.forEach(img => {
-        if (img.dataset.preloaded) return;
-        const src = img.currentSrc || img.src;
-        if (!src) return;
-        const temp = new Image();
-        temp.src = src;
-        temp.loading = 'lazy';
-        temp.onload = () => { img.dataset.preloaded = 'true'; };
-      });
-    }, 1000);
-  }
-
-  function buildCarousel() {
-    if (!carousel) return;
-
-    isBuilding = true;
-    stopAutoScroll();
-
-    // Rebuild from the immutable snapshot of initial trios
-    carousel.innerHTML = '';
-    originalGroups.forEach(g => carousel.appendChild(g.cloneNode(true)));
-
-    const groups = getAllTrios();
-    const count = groups.length;
-    log('buildCarousel: initial groups', count);
-
-    if (count === 0) {
-      isBuilding = false;
-      return;
+    // ======== API ========
+    async function fetchPhotos(which) {
+        const res = await fetch(`/api/photos?variant=${which}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to load photos');
+        return data.photos || [];
     }
 
-    // If only one real group, skip infinite loop clones
-    if (count === 1) {
-      carousel.style.willChange = 'transform';
-      carousel.style.backfaceVisibility = 'hidden';
-      carousel.style.webkitBackfaceVisibility = 'hidden';
-
-      currentIndex = 0;
-      setTransform(false);
-      preloadAround();
-      isBuilding = false;
-      log('buildCarousel: single group; skipping clones');
-      return;
-    }
-
-    // Add edge clones (clone last to head, first to tail)
-    const lastClone = groups[count - 1].cloneNode(true);
-    const firstClone = groups[0].cloneNode(true);
-    carousel.insertBefore(lastClone, carousel.firstChild);
-    carousel.appendChild(firstClone);
-
-    carousel.style.willChange = 'transform';
-    carousel.style.backfaceVisibility = 'hidden';
-    carousel.style.webkitBackfaceVisibility = 'hidden';
-
-    currentIndex = 1; // first real slide
-    setTransform(false);
-    preloadAround();
-
-    isBuilding = false;
-    startAutoScroll();
-    log('buildCarousel: finished; total with clones', getAllTrios().length);
-  }
-
-  function nextTrio() {
-    if (!carousel || isBuilding) return;
-    const total = getAllTrios().length;
-    if (!total) return;
-
-    currentIndex++;
-    setTransform(true);
-    preloadAround();
-
-    setTimeout(() => {
-      if (currentIndex === total - 1) {
-        currentIndex = 1;
-        setTransform(false);
-      }
-    }, TRANSITION_MS);
-
-    log('nextTrio ->', currentIndex);
-  }
-
-  function prevTrio() {
-    if (!carousel || isBuilding) return;
-    const total = getAllTrios().length;
-    if (!total) return;
-
-    currentIndex--;
-    setTransform(true);
-    preloadAround();
-
-    setTimeout(() => {
-      if (currentIndex === 0) {
-        currentIndex = total - 2;
-        setTransform(false);
-      }
-    }, TRANSITION_MS);
-
-    log('prevTrio ->', currentIndex);
-  }
-
-  // Initialize carousel only on pages that have it (desktop homepage)
-  if (carousel) {
-    // Snapshot initial groups BEFORE we mutate the DOM
-    originalGroups = Array.from(carousel.querySelectorAll('.image-trio'))
-      .map(node => node.cloneNode(true));
-
-    log('init: found image-trio groups', originalGroups.length);
-
-    // Buttons
-    if (prevButton) prevButton.addEventListener('click', () => {
-      prevTrio();
-      resetAutoScrollTimer();
-    });
-    if (nextButton) nextButton.addEventListener('click', () => {
-      nextTrio();
-      resetAutoScrollTimer();
-    });
-
-    // Touch / swipe handling
-    let touchStartX = 0;
-    let touchStartTime = 0;
-
-    carousel.addEventListener('touchstart', e => {
-      if (isBuilding) return;
-      isDragging = false;
-      const t = e.changedTouches[0];
-      touchStartX = t.screenX;
-      touchStartTime = Date.now();
-      carousel.style.transition = 'none';
-      resetAutoScrollTimer();
-    }, { passive: true });
-
-    carousel.addEventListener('touchmove', e => {
-      if (isBuilding) return;
-      const t = e.changedTouches[0];
-      const diff = t.screenX - touchStartX;
-
-      if (Math.abs(diff) > 10) {
-        e.preventDefault();
-        isDragging = true;
-      }
-
-      const width = Math.max(window.innerWidth, 1);
-      const percentMove = Math.max(Math.min(diff / width * 100, 50), -50);
-      const base = currentIndex * -100;
-      carousel.style.transform = `translate3d(${base + percentMove}%, 0, 0)`;
-    }, { passive: false });
-
-    carousel.addEventListener('touchend', e => {
-      if (isBuilding) return;
-      const diff = e.changedTouches[0].screenX - touchStartX;
-      const timeDiff = Date.now() - touchStartTime;
-      carousel.style.transition = 'transform 0.5s ease-out';
-
-      const isSwipe = Math.abs(diff) > 50 || (Math.abs(diff) > 20 && timeDiff < 300);
-      if (isSwipe) {
-        diff < 0 ? nextTrio() : prevTrio();
-      } else {
-        setTransform(true);
-      }
-      resetAutoScrollTimer();
-    }, { passive: true });
-
-    // Prevent accidental link activation if the gesture was a drag
-    carousel.addEventListener('click', (e) => {
-      if (!isDragging) return;
-      const anchor = e.target.closest('a');
-      if (anchor) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    });
-
-    // First build
-    buildCarousel();
-
-    // Debounced rebuild on resize/orientation changes
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        buildCarousel();
-      }, 250);
-    });
-  } else {
-    log('init: no .carousel on this page');
-  }
-
-  // ================= CONTACT FORM CODE =================
-  const contactForm = document.getElementById('contactForm');
-  const formResult = document.getElementById('formResult');
-
-  if (contactForm) {
-    contactForm.addEventListener('submit', function (e) {
-      e.preventDefault(); // Prevent the form from submitting normally
-
-      if (formResult) {
-        formResult.textContent = "Sending your message...";
-        formResult.className = "form-result pending";
-        formResult.style.display = "block";
-      }
-
-      const formData = new FormData(contactForm);
-      const object = Object.fromEntries(formData);
-
-      const accessKey = object.access_key;
-      if (!accessKey) {
-        console.error("Web3Forms access key is missing or empty");
-        if (formResult) {
-          formResult.textContent = "Configuration error: Missing API key. Please contact the site administrator.";
-          formResult.className = "form-result error";
+    async function loadAndRender(which) {
+        try {
+            const photos = await fetchPhotos(which);
+            if (which === 'desktop') renderDesktop(photos);
+            else renderMobile(photos);
+        } catch (err) {
+            console.error(err);
         }
-        return;
-      }
+    }
 
-      console.log('Submitting form with payload:', object);
-      const json = JSON.stringify(object);
+    function clearContainers() {
+        if (desktopCarousel) desktopCarousel.innerHTML = '';
+        if (mobileList) mobileList.innerHTML = '';
+        if (desktopSection) desktopSection.hidden = true;
+        if (mobileSection) mobileSection.hidden = true;
+    }
 
-      fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: json
-      })
-        .then(async (response) => {
-          let jsonResp;
-          try {
-            jsonResp = await response.json();
-            console.log('Web3Forms API response:', jsonResp);
-          } catch (e) {
-            console.error('Failed to parse API response', e);
-            jsonResp = { message: "Failed to parse response" };
-          }
+    // ======== DESKTOP CAROUSEL (trimmed, no touch handlers) ========
+    let currentIndex = 1; // account for clones
+    let autoScrollInterval = null;
+    let interactionTimeout = null;
 
-          if (formResult) {
-            if (response.status == 200) {
-              formResult.textContent = "Message sent successfully!";
-              formResult.className = "form-result success";
-              contactForm.reset();
-            } else {
-              console.error('Error response:', response.status, jsonResp);
-              formResult.textContent = jsonResp.message || "Something went wrong!";
-              formResult.className = "form-result error";
-            }
-          }
-        })
-        .catch(error => {
-          console.error('Fetch error:', error);
-          if (formResult) {
-            formResult.textContent = "Network error. Please try again.";
-            formResult.className = "form-result error";
-          }
-        })
-        .finally(function () {
-          if (formResult) {
-            setTimeout(() => {
-              formResult.style.display = "none";
-            }, 5000);
-          }
+    const AUTO_SCROLL_DELAY = 5000;      // 5s
+    const RESUME_AUTO_SCROLL_DELAY = 10000; // 10s
+
+    function renderDesktop(photos) {
+        if (!desktopSection || !desktopCarousel) return;
+        if (!photos.length) {
+            desktopSection.hidden = true;
+            return;
+        }
+
+        desktopSection.hidden = false;
+        mobileSection && (mobileSection.hidden = true);
+
+        // Build groups of three
+        const groups = [];
+        for (let i = 0; i < photos.length; i += 3) {
+            const group = photos.slice(i, i + 3);
+            groups.push(group);
+        }
+
+        // Clear & (re)build carousel DOM
+        desktopCarousel.innerHTML = '';
+        const realGroups = [];
+
+        groups.forEach((group) => {
+            const trio = document.createElement('div');
+            trio.className = 'image-trio';
+            group.forEach((photo, j) => {
+                const wrap = document.createElement('div');
+                wrap.className = 'image-wrapper';
+                const a = document.createElement('a');
+                a.href = photo.view_url;
+                const img = document.createElement('img');
+                img.src = photo.url;
+                img.alt = `Automotive Photography`;
+                img.loading = (realGroups.length === 0 && j === 0) ? 'eager' : 'lazy';
+                a.appendChild(img);
+                wrap.appendChild(a);
+                trio.appendChild(wrap);
+            });
+            desktopCarousel.appendChild(trio);
+            realGroups.push(trio);
         });
-    });
-  }
+
+        // Clone first & last for seamless loop
+        const firstClone = realGroups[0].cloneNode(true);
+        const lastClone = realGroups[realGroups.length - 1].cloneNode(true);
+        desktopCarousel.appendChild(firstClone);
+        desktopCarousel.insertBefore(lastClone, desktopCarousel.firstChild);
+
+        // GPU hints
+        desktopCarousel.style.willChange = 'transform';
+        desktopCarousel.style.backfaceVisibility = 'hidden';
+        desktopCarousel.style.webkitBackfaceVisibility = 'hidden';
+
+        // Start at index 1 (first real group)
+        currentIndex = 1;
+        updateCarousel(false, realGroups.length);
+
+        // Wire controls
+        if (prevButton && nextButton) {
+            prevButton.onclick = () => { prevTrio(realGroups.length); resetAutoScrollTimer(realGroups.length); };
+            nextButton.onclick = () => { nextTrio(realGroups.length); resetAutoScrollTimer(realGroups.length); };
+        }
+
+        // Auto-scroll
+        startAutoScroll(realGroups.length);
+        // Preload visibles
+        preloadVisibleAndAdjacentImages(realGroups.length);
+    }
+
+    function updateCarousel(animate = true, realLen = 1) {
+        if (!desktopCarousel) return;
+        const offset = currentIndex * -100;
+
+        if (!animate) {
+            desktopCarousel.style.transition = 'none';
+        } else {
+            desktopCarousel.style.transition = 'transform 0.5s ease-out';
+        }
+        desktopCarousel.style.transform = `translate3d(${offset}%, 0, 0)`;
+
+        if (!animate) {
+            // force reflow, then restore transition timing
+            // eslint-disable-next-line no-unused-expressions
+            desktopCarousel.offsetHeight;
+            desktopCarousel.style.transition = 'transform 0.5s ease-out';
+        }
+        preloadVisibleAndAdjacentImages(realLen);
+    }
+
+    function nextTrio(realLen) {
+        currentIndex++;
+        updateCarousel(true, realLen);
+        if (currentIndex === realLen + 1) {
+            setTimeout(() => {
+                currentIndex = 1;
+                updateCarousel(false, realLen);
+            }, 500);
+        }
+    }
+
+    function prevTrio(realLen) {
+        currentIndex--;
+        updateCarousel(true, realLen);
+        if (currentIndex === 0) {
+            setTimeout(() => {
+                currentIndex = realLen;
+                updateCarousel(false, realLen);
+            }, 500);
+        }
+    }
+
+    function startAutoScroll(realLen) {
+        if (!autoScrollInterval) {
+            autoScrollInterval = setInterval(() => nextTrio(realLen), AUTO_SCROLL_DELAY);
+        }
+    }
+
+    function stopAutoScroll() {
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
+    }
+
+    function resetAutoScrollTimer(realLen) {
+        stopAutoScroll();
+        clearTimeout(interactionTimeout);
+        interactionTimeout = setTimeout(() => startAutoScroll(realLen), RESUME_AUTO_SCROLL_DELAY);
+    }
+
+    function teardownDesktop() {
+        stopAutoScroll();
+        clearTimeout(interactionTimeout);
+    }
+
+    function preloadVisibleAndAdjacentImages(realLen) {
+        if (!desktopCarousel) return;
+
+        const allTrios = desktopCarousel.querySelectorAll('.image-trio');
+        if (!allTrios.length) return;
+
+        const visibleIndex = currentIndex;      // includes clones; ok for selection
+        const len = allTrios.length;
+        const nextIndex = (visibleIndex + 1) % len;
+        const prevIndex = (visibleIndex - 1 + len) % len;
+
+        const priorityImages = [
+            ...allTrios[visibleIndex].querySelectorAll('img'),
+            ...allTrios[nextIndex].querySelectorAll('img'),
+            ...allTrios[prevIndex].querySelectorAll('img')
+        ];
+
+        priorityImages.forEach(img => {
+            if (!img.dataset.preloaded) {
+                const t = new Image();
+                t.src = img.src;
+                t.loading = 'eager';
+                t.onload = () => { img.dataset.preloaded = 'true'; };
+            }
+        });
+
+        setTimeout(() => {
+            const remaining = [...desktopCarousel.querySelectorAll('img')].filter(img => !img.dataset.preloaded);
+            remaining.forEach(img => {
+                const t = new Image();
+                t.src = img.src;
+                t.loading = 'lazy';
+                t.onload = () => { img.dataset.preloaded = 'true'; };
+            });
+        }, 1000);
+    }
+
+    // ======== MOBILE GALLERY (clean, curated, mobile-first) ========
+    function renderMobile(photos) {
+        if (!mobileSection || !mobileList) return;
+        if (!photos.length) {
+            mobileSection.hidden = true;
+            return;
+        }
+        mobileSection.hidden = false;
+        desktopSection && (desktopSection.hidden = true);
+
+        // Build simple, performant mobile list
+        const frag = document.createDocumentFragment();
+        photos.forEach((p, idx) => {
+            const link = document.createElement('a');
+            link.className = 'mobile-card';
+            link.href = p.view_url;
+
+            const img = document.createElement('img');
+            img.src = p.url;
+            img.alt = `Photo ${idx + 1}`;
+            img.loading = idx < 2 ? 'eager' : 'lazy';
+            img.decoding = 'async';
+
+            link.appendChild(img);
+            frag.appendChild(link);
+        });
+        mobileList.innerHTML = '';
+        mobileList.appendChild(frag);
+    }
+
+    // ======== CONTACT FORM (unchanged) ========
+    const contactForm = document.getElementById('contactForm');
+    const formResult = document.getElementById('formResult');
+
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (formResult) {
+                formResult.textContent = "Sending your message...";
+                formResult.className = "form-result pending";
+                formResult.style.display = "block";
+            }
+
+            const formData = new FormData(contactForm);
+            const object = Object.fromEntries(formData);
+            const accessKey = object.access_key;
+
+            if (!accessKey) {
+                console.error("Web3Forms access key is missing or empty");
+                if (formResult) {
+                    formResult.textContent = "Configuration error: Missing API key. Please contact the site administrator.";
+                    formResult.className = "form-result error";
+                }
+                return;
+            }
+
+            fetch('https://api.web3forms.com/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(object)
+            })
+            .then(async (response) => {
+                let json;
+                try { json = await response.json(); }
+                catch { json = { message: "Failed to parse response" }; }
+
+                if (formResult) {
+                    if (response.status === 200) {
+                        formResult.textContent = "Message sent successfully!";
+                        formResult.className = "form-result success";
+                        contactForm.reset();
+                    } else {
+                        console.error('Error response:', response.status, json);
+                        formResult.textContent = json.message || "Something went wrong!";
+                        formResult.className = "form-result error";
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                if (formResult) {
+                    formResult.textContent = "Network error. Please try again.";
+                    formResult.className = "form-result error";
+                }
+            })
+            .finally(function() {
+                if (formResult) {
+                    setTimeout(() => { formResult.style.display = "none"; }, 5000);
+                }
+            });
+        });
+    }
 });

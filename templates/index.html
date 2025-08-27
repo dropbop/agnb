@@ -1,160 +1,106 @@
-<!-- templates/index.html -->
 {% extends "base.html" %}
 
-{% block head %}
-    <!-- Viewport -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Fonts -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
-{% endblock %}
-
 {% block body %}
-    <header>
-        <div class="header-content">
-            <h1 class="site-title">AllGasNoBrakes</h1>
-            <nav>
-                <a href="{{ url_for('portfolio') }}">Portfolio</a>
-                <a href="#contact">Contact</a>
-            </nav>
+<header>
+    <div class="header-content">
+        <h1 class="site-title">AllGasNoBrakes</h1>
+        <nav>
+            <a href="#gallery-anchor">Portfolio</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+    <!-- Anchor used by nav (works for either experience) -->
+    <div id="gallery-anchor"></div>
+
+    <!-- DESKTOP EXPERIENCE (carousel of trios). JS will unhide/populate on desktop. -->
+    <section id="desktop-gallery" class="carousel-container" hidden>
+        <div class="carousel" aria-live="polite"></div>
+
+        <div class="controls">
+            <button class="arrow-button" aria-label="Previous" id="prevButton">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <button class="arrow-button" aria-label="Next" id="nextButton">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
         </div>
-    </header>
+    </section>
 
-    <main>
-        {% if is_mobile %}
-        <!-- Mobile hero: curated grid (no auto-scroll) -->
-        {% set mobile_list = mobile_photos if mobile_photos|length > 0 else desktop_photos %}
-        {% set mobile_subdir = 'photos_mobile' if mobile_photos|length > 0 else 'photos' %}
-        <section class="mobile-hero" id="gallery">
-            <div class="mobile-hero-grid">
-                {% for filename in mobile_list %}
-                <div class="mobile-hero-item">
-                    <a href="{{ url_for('view_image', subdir=mobile_subdir, filename=filename) }}">
-                        <img
-                            src="{{ url_for('get_media', subdir=mobile_subdir, filename=filename) }}"
-                            alt="Automotive Photography {{ loop.index }}"
-                            loading="lazy"
-                            onerror="this.onerror=null;this.src='{{ url_for('static', filename=mobile_subdir ~ '/' ~ filename) }}';">
+    <!-- MOBILE EXPERIENCE (curated single-column gallery). JS will unhide/populate on mobile. -->
+    <section id="mobile-gallery" class="mobile-gallery" hidden>
+        <div class="mobile-list" aria-live="polite"></div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="contact-content">
+            <div class="contact-info">
+                <p class="contact-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                        <path d="m3 7 9 6 9-6"></path>
+                    </svg>
+                    <a href="mailto:AllGasNoBrakes@tuta.com" class="contact-link">
+                        AllGasNoBrakes@tuta.com
                     </a>
-                </div>
-                {% endfor %}
-            </div>
-        </section>
-        {% else %}
-        <!-- Desktop hero: existing 3-up auto-scrolling carousel -->
-        {% set desktop_list = desktop_photos %}
-        <section class="carousel-container" id="gallery">
-            <div class="carousel">
-                {% for i in range(0, desktop_list|length, 3) %}
-                <div class="image-trio">
-                    {% for j in range(3) %}
-                        {% if i + j < desktop_list|length %}
-                        <div class="image-wrapper">
-                            <a href="{{ url_for('view_image', subdir='photos', filename=desktop_list[i + j]) }}">
-                                <img
-                                    src="{{ url_for('get_media', subdir='photos', filename=desktop_list[i + j]) }}"
-                                    alt="Automotive Photography {{ i + j + 1 }}"
-                                    loading="{% if i == 0 and j == 0 %}eager{% else %}lazy{% endif %}"
-                                    onerror="this.onerror=null;this.src='{{ url_for('static', filename='photos/' ~ desktop_list[i + j]) }}';">
-                            </a>
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-                {% endfor %}
+                </p>
+                <p class="contact-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="4.5"></rect>
+                        <circle cx="12" cy="12" r="3.5"></circle>
+                        <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" stroke="none"></circle>
+                    </svg>
+                    <a href="https://instagram.com/AllGasNoBrakesMedia"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="contact-link">
+                        AllGasNoBrakesMedia
+                    </a>
+                </p>
             </div>
 
-            <div class="controls">
-                <button class="arrow-button prev" aria-label="Previous" id="prevButton">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                </button>
-                <button class="arrow-button next" aria-label="Next" id="nextButton">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </button>
-            </div>
+            <!-- Contact Form -->
+            <div class="contact-form-container">
+                <h2 class="form-title">Get In Touch</h2>
+                <form id="contactForm" class="contact-form">
+                    <input type="hidden" name="access_key" value="{{ web3forms_key|default('YOUR_ACCESS_KEY_HERE') }}">
 
-            <!-- Graceful fallback if JS disabled or crashes -->
-            <noscript>
-                <div class="mobile-hero-grid" style="padding-top: var(--mobile-header-height);">
-                    {% for filename in desktop_list %}
-                    <div class="mobile-hero-item">
-                        <img
-                          src="{{ url_for('get_media', subdir='photos', filename=filename) }}"
-                          alt="Automotive Photography {{ loop.index }}">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" placeholder="Your Name" required>
                     </div>
-                    {% endfor %}
-                </div>
-            </noscript>
-        </section>
-        {% endif %}
 
-        <!-- Contact Section -->
-        <section id="contact" class="contact">
-            <div class="contact-content">
-                <div class="contact-info">
-                    <p class="contact-item">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="Your Email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" placeholder="Tell us about your project" rows="4" required></textarea>
+                    </div>
+
+                    <input type="checkbox" name="botcheck" style="display:none;">
+
+                    <button type="submit" class="submit-button">
+                        <span>Send Message</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
-                            <path d="m3 7 9 6 9-6"></path>
+                            <path d="m5 12 14 0"></path>
+                            <path d="m12 5 7 7-7 7"></path>
                         </svg>
-                        <a href="mailto:AllGasNoBrakes@tuta.com" class="contact-link">
-                            AllGasNoBrakes@tuta.com
-                        </a>
-                    </p>
-                    <p class="contact-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="18" height="18" x="3" y="3" rx="4.5"></rect>
-                            <circle cx="12" cy="12" r="3.5"></circle>
-                            <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" stroke="none"></circle>
-                        </svg>
-                        <a href="https://instagram.com/AllGasNoBrakesMedia"
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           class="contact-link">
-                            AllGasNoBrakesMedia
-                        </a>
-                    </p>
-                </div>
-                
-                <!-- Contact Form -->
-                <div class="contact-form-container">
-                    <h2 class="form-title">Get In Touch</h2>
-                    <form id="contactForm" class="contact-form">
-                        <input type="hidden" name="access_key" value="{{ web3forms_key|default('YOUR_ACCESS_KEY_HERE') }}">
-                        
-                        <div class="form-group">
-                            <label for="name">Name</label>
-                            <input type="text" id="name" name="name" placeholder="Your Name" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" name="email" placeholder="Your Email" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="message">Message</label>
-                            <textarea id="message" name="message" placeholder="Tell us about your project" rows="4" required></textarea>
-                        </div>
-                        
-                        <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
-                        
-                        <button type="submit" class="submit-button">
-                            <span>Send Message</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m5 12 14 0"></path>
-                                <path d="m12 5 7 7-7 7"></path>
-                            </svg>
-                        </button>
-                        
-                        <div id="formResult" class="form-result"></div>
-                    </form>
-                </div>
+                    </button>
+
+                    <div id="formResult" class="form-result"></div>
+                </form>
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
+</main>
 {% endblock %}
