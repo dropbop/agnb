@@ -1,14 +1,14 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // ======== ELEMENT HOOKS ========
+document.addEventListener('DOMContentLoaded', function () {
+    // ======== ELEMENT HOOKS (no optional chaining for older Safari) ========
     const desktopSection = document.getElementById('desktop-gallery');
-    const desktopCarousel = desktopSection?.querySelector('.carousel');
+    const desktopCarousel = desktopSection ? desktopSection.querySelector('.carousel') : null;
     const mobileSection = document.getElementById('mobile-gallery');
-    const mobileList = mobileSection?.querySelector('.mobile-list');
+    const mobileList = mobileSection ? mobileSection.querySelector('.mobile-list') : null;
 
     const prevButton = document.getElementById('prevButton');
     const nextButton = document.getElementById('nextButton');
 
-    // ======== EXPERIENCE SWITCH (JS decides) ========
+    // ======== EXPERIENCE SWITCH (JS decides; CSS still provides fallback) ========
     const mql = window.matchMedia('(max-width: 768px)');
 
     let variant = mql.matches ? 'mobile' : 'desktop';
@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load photos + render appropriate experience
     loadAndRender(variant);
 
-    // Switch if viewport crosses breakpoint
-    mql.addEventListener('change', (e) => {
+    // Switch if viewport crosses breakpoint (with legacy addListener fallback)
+    function onMediaChange(e) {
         const newVariant = e.matches ? 'mobile' : 'desktop';
         if (newVariant === variant) return;
         variant = newVariant;
@@ -26,13 +26,20 @@ document.addEventListener('DOMContentLoaded', () => {
         teardownDesktop(); // stop timers if any
         clearContainers();
         loadAndRender(variant);
-    });
+    }
+    if (typeof mql.addEventListener === 'function') {
+        mql.addEventListener('change', onMediaChange);
+    } else if (typeof mql.addListener === 'function') {
+        mql.addListener(onMediaChange); // iOS 12/13
+    }
 
     // ======== API ========
     async function fetchPhotos(which) {
-        const res = await fetch(`/api/photos?variant=${which}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to load photos');
+        const res = await fetch('/api/photos?variant=' + which);
+        let data;
+        try { data = await res.json(); }
+        catch (e) { throw new Error('Failed to parse photo JSON'); }
+        if (!res.ok) throw new Error((data && data.error) || 'Failed to load photos');
         return data.photos || [];
     }
 
@@ -49,8 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearContainers() {
         if (desktopCarousel) desktopCarousel.innerHTML = '';
         if (mobileList) mobileList.innerHTML = '';
-        if (desktopSection) desktopSection.hidden = true;
-        if (mobileSection) mobileSection.hidden = true;
+        if (desktopSection) desktopSection.classList.remove('is-ready');
     }
 
     // ======== DESKTOP CAROUSEL (trimmed, no touch handlers) ========
@@ -58,18 +64,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let autoScrollInterval = null;
     let interactionTimeout = null;
 
-    const AUTO_SCROLL_DELAY = 5000;      // 5s
+    const AUTO_SCROLL_DELAY = 5000;         // 5s
     const RESUME_AUTO_SCROLL_DELAY = 10000; // 10s
 
     function renderDesktop(photos) {
         if (!desktopSection || !desktopCarousel) return;
         if (!photos.length) {
-            desktopSection.hidden = true;
+            desktopSection.classList.remove('is-ready');
             return;
         }
-
-        desktopSection.hidden = false;
-        mobileSection && (mobileSection.hidden = true);
 
         // Build groups of three
         const groups = [];
@@ -92,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 a.href = photo.view_url;
                 const img = document.createElement('img');
                 img.src = photo.url;
-                img.alt = `Automotive Photography`;
+                img.alt = 'Automotive Photography';
                 img.loading = (realGroups.length === 0 && j === 0) ? 'eager' : 'lazy';
                 a.appendChild(img);
                 wrap.appendChild(a);
@@ -101,6 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
             desktopCarousel.appendChild(trio);
             realGroups.push(trio);
         });
+
+        if (!realGroups.length) {
+            desktopSection.classList.remove('is-ready');
+            return;
+        }
 
         // Clone first & last for seamless loop
         const firstClone = realGroups[0].cloneNode(true);
@@ -119,17 +127,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Wire controls
         if (prevButton && nextButton) {
-            prevButton.onclick = () => { prevTrio(realGroups.length); resetAutoScrollTimer(realGroups.length); };
-            nextButton.onclick = () => { nextTrio(realGroups.length); resetAutoScrollTimer(realGroups.length); };
+            prevButton.onclick = function () { prevTrio(realGroups.length); resetAutoScrollTimer(realGroups.length); };
+            nextButton.onclick = function () { nextTrio(realGroups.length); resetAutoScrollTimer(realGroups.length); };
         }
 
         // Auto-scroll
         startAutoScroll(realGroups.length);
         // Preload visibles
         preloadVisibleAndAdjacentImages(realGroups.length);
+
+        // Mark as ready so CSS shows the desktop gallery on large screens
+        desktopSection.classList.add('is-ready');
     }
 
-    function updateCarousel(animate = true, realLen = 1) {
+    function updateCarousel(animate, realLen) {
         if (!desktopCarousel) return;
         const offset = currentIndex * -100;
 
@@ -138,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             desktopCarousel.style.transition = 'transform 0.5s ease-out';
         }
-        desktopCarousel.style.transform = `translate3d(${offset}%, 0, 0)`;
+        desktopCarousel.style.transform = 'translate3d(' + offset + '%, 0, 0)';
 
         if (!animate) {
             // force reflow, then restore transition timing
@@ -153,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentIndex++;
         updateCarousel(true, realLen);
         if (currentIndex === realLen + 1) {
-            setTimeout(() => {
+            setTimeout(function () {
                 currentIndex = 1;
                 updateCarousel(false, realLen);
             }, 500);
@@ -164,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentIndex--;
         updateCarousel(true, realLen);
         if (currentIndex === 0) {
-            setTimeout(() => {
+            setTimeout(function () {
                 currentIndex = realLen;
                 updateCarousel(false, realLen);
             }, 500);
@@ -173,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startAutoScroll(realLen) {
         if (!autoScrollInterval) {
-            autoScrollInterval = setInterval(() => nextTrio(realLen), AUTO_SCROLL_DELAY);
+            autoScrollInterval = setInterval(function () { nextTrio(realLen); }, AUTO_SCROLL_DELAY);
         }
     }
 
@@ -187,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetAutoScrollTimer(realLen) {
         stopAutoScroll();
         clearTimeout(interactionTimeout);
-        interactionTimeout = setTimeout(() => startAutoScroll(realLen), RESUME_AUTO_SCROLL_DELAY);
+        interactionTimeout = setTimeout(function () { startAutoScroll(realLen); }, RESUME_AUTO_SCROLL_DELAY);
     }
 
     function teardownDesktop() {
@@ -206,28 +217,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const nextIndex = (visibleIndex + 1) % len;
         const prevIndex = (visibleIndex - 1 + len) % len;
 
-        const priorityImages = [
-            ...allTrios[visibleIndex].querySelectorAll('img'),
-            ...allTrios[nextIndex].querySelectorAll('img'),
-            ...allTrios[prevIndex].querySelectorAll('img')
-        ];
+        const priorityImages = []
+            .concat(Array.prototype.slice.call(allTrios[visibleIndex].querySelectorAll('img')))
+            .concat(Array.prototype.slice.call(allTrios[nextIndex].querySelectorAll('img')))
+            .concat(Array.prototype.slice.call(allTrios[prevIndex].querySelectorAll('img')));
 
-        priorityImages.forEach(img => {
+        priorityImages.forEach(function (img) {
             if (!img.dataset.preloaded) {
                 const t = new Image();
                 t.src = img.src;
                 t.loading = 'eager';
-                t.onload = () => { img.dataset.preloaded = 'true'; };
+                t.onload = function () { img.dataset.preloaded = 'true'; };
             }
         });
 
-        setTimeout(() => {
-            const remaining = [...desktopCarousel.querySelectorAll('img')].filter(img => !img.dataset.preloaded);
-            remaining.forEach(img => {
+        setTimeout(function () {
+            const remaining = Array.prototype.slice.call(desktopCarousel.querySelectorAll('img'))
+                .filter(function (img) { return !img.dataset.preloaded; });
+            remaining.forEach(function (img) {
                 const t = new Image();
                 t.src = img.src;
                 t.loading = 'lazy';
-                t.onload = () => { img.dataset.preloaded = 'true'; };
+                t.onload = function () { img.dataset.preloaded = 'true'; };
             });
         }, 1000);
     }
@@ -236,28 +247,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderMobile(photos) {
         if (!mobileSection || !mobileList) return;
         if (!photos.length) {
-            mobileSection.hidden = true;
             return;
         }
-        mobileSection.hidden = false;
-        desktopSection && (desktopSection.hidden = true);
 
         // Build simple, performant mobile list
         const frag = document.createDocumentFragment();
-        photos.forEach((p, idx) => {
+        for (let idx = 0; idx < photos.length; idx++) {
+            const p = photos[idx];
             const link = document.createElement('a');
             link.className = 'mobile-card';
             link.href = p.view_url;
 
             const img = document.createElement('img');
             img.src = p.url;
-            img.alt = `Photo ${idx + 1}`;
+            img.alt = 'Photo ' + (idx + 1);
             img.loading = idx < 2 ? 'eager' : 'lazy';
             img.decoding = 'async';
 
             link.appendChild(img);
             frag.appendChild(link);
-        });
+        }
         mobileList.innerHTML = '';
         mobileList.appendChild(frag);
     }

@@ -13,7 +13,7 @@
     --header-offset: 60px;
 
     /* Mobile gallery aspect ratio (set 3/4 for portrait, or 4/3 for landscape) */
-    --mobile-aspect-ratio: 3/4;
+    --mobile-aspect-ratio: 3 / 4;
 }
 
 /* Global reset */
@@ -265,4 +265,25 @@ nav a:hover { background: var(--color-accent); transform: translateX(-10px); }
     color: #f1c40f; display: block;
 }
 
-/* (No legacy @media overrides; JS chooses the experience.) */
+/* ===== Fallback display logic (works even if JS fails) =====
+   - Mobile (<=768px): show the SSR mobile gallery by default.
+   - Desktop (>=769px): hide desktop until JS renders and marks it ready. */
+#desktop-gallery { display: none; }
+#mobile-gallery { display: block; }
+
+@media (min-width: 769px) {
+  #mobile-gallery { display: none; }
+  #desktop-gallery.is-ready { display: block; }
+}
+
+/* Extra safety for browsers without aspect-ratio support */
+@supports not (aspect-ratio: 1 / 1) {
+  .mobile-card { position: relative; width: 100%; }
+  /* 3:4 ratio ⇒ height = (4/3) * width */
+  .mobile-card::before {
+    content: ""; display: block; padding-top: calc(100% * 4 / 3);
+  }
+  .mobile-card > img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  }
+}
