@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (typeof widthQuery.addListener === 'function') {
         widthQuery.addListener(onMediaChange);
     }
-    // Coarse pointer usually won't change at runtime, but wire it just in case
     if (typeof coarsePointer.addEventListener === 'function') {
         coarsePointer.addEventListener('change', onMediaChange);
     } else if (typeof coarsePointer.addListener === 'function') {

@@ -12,19 +12,22 @@
     /* Header offset for fixed header */
     --header-offset: 60px;
 
-    /* Mobile card sizing */
-    --mobile-card-height: clamp(260px, 60vh, 520px);
+    /* Mobile stage + card sizing */
+    --mobile-stage-max: 640px;          /* center column max width on mobile */
+    --mobile-aspect-ratio: 4 / 5;       /* uniform card aspect ratio */
 }
 
 /* Global reset */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+html { overflow-x: hidden; overscroll-behavior-x: none; }
 body {
     background-color: var(--color-background);
     color: var(--color-text);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.5;
     overflow-x: hidden;
+    touch-action: pan-y; /* discourage horizontal swipes that cause sideways panning */
 }
 
 /* Header & Navigation */
@@ -77,6 +80,24 @@ nav a {
     transition: all 0.3s var(--transition-smooth);
 }
 nav a:hover { background: var(--color-accent); transform: translateX(-10px); }
+
+/* Center header/nav on mobile for a balanced look */
+@media (max-width: 768px) {
+  header { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 6px;
+  }
+  nav { 
+    position: static; 
+    transform: none; 
+    right: auto;
+    display: flex; 
+    gap: 8px;
+  }
+  nav a { margin: 0; }
+}
 
 /* ================= DESKTOP CAROUSEL ================= */
 .carousel-container {
@@ -142,44 +163,44 @@ nav a:hover { background: var(--color-accent); transform: translateX(-10px); }
     padding-left: 16px;
     padding-right: 16px;
     padding-bottom: 48px;
-
-    /* Keep a consistent content rail so the page doesn't feel "oversized" on large phones/tablets */
-    max-width: 720px;
-    margin: 0 auto;
 }
 .mobile-list {
-    display: grid;
-    grid-template-columns: 1fr;
+    /* Single centered column */
+    width: min(100%, var(--mobile-stage-max));
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 16px;
 
-    /* Gentle snap gives a consistent, pleasant scroll without being strict (optional) */
+    /* Gentle snap gives consistent scroll feel (optional) */
     scroll-snap-type: y proximity;
 }
 .mobile-card {
     display: block;
     width: 100%;
-    height: var(--mobile-card-height); /* viewport-clamped height */
+    aspect-ratio: var(--mobile-aspect-ratio); /* uniform size */
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: 10px;
     background: #0f0f0f;
     box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    transform: skewX(-4deg);
+    /* Remove skew/scale on mobile to prevent horizontal overflow */
+    transform: none;
     transition: transform 0.3s var(--transition-smooth);
 
     /* Performance: avoid layout work for off-screen images */
     content-visibility: auto;
-    contain-intrinsic-size: 420px; /* approximate height placeholder to prevent jumps */
     scroll-snap-align: start;
 }
-.mobile-card:hover { transform: skewX(-4deg) scale(1.02); }
+.mobile-card:hover { transform: none; }
 .mobile-card img {
+    display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* uniform composition within fixed-height card */
-    transform: skewX(4deg) scale(1.02);
-    transition: transform 0.3s var(--transition-smooth);
+    object-fit: cover; /* consistent composition in uniform frame */
+    transform: none;
+    transition: none;
 }
-.mobile-card:hover img { transform: skewX(4deg) scale(1.06); }
 
 /* ================= Contact Section ================= */
 .contact {
@@ -289,4 +310,16 @@ nav a:hover { background: var(--color-accent); transform: translateX(-10px); }
 @media (min-width: 769px) {
   #mobile-gallery { display: none; }
   #desktop-gallery.is-ready { display: block; }
+}
+
+/* ===== Aspect-ratio fallback for very old mobile browsers ===== */
+@supports not (aspect-ratio: 1 / 1) {
+  .mobile-card { position: relative; width: 100%; }
+  /* 4:5 ratio ⇒ height = 1.25 * width ⇒ 125% padding */
+  .mobile-card::before {
+    content: ""; display: block; padding-top: 125%;
+  }
+  .mobile-card > img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  }
 }
