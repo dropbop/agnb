@@ -15,8 +15,8 @@
     <!-- Anchor used by nav (works for either experience) -->
     <div id="gallery-anchor"></div>
 
-    <!-- DESKTOP EXPERIENCE (carousel of trios). JS will unhide/populate on desktop. -->
-    <section id="desktop-gallery" class="carousel-container" hidden>
+    <!-- DESKTOP EXPERIENCE (carousel of trios). JS will populate and mark as ready. -->
+    <section id="desktop-gallery" class="carousel-container">
         <div class="carousel" aria-live="polite"></div>
 
         <div class="controls">
@@ -33,9 +33,20 @@
         </div>
     </section>
 
-    <!-- MOBILE EXPERIENCE (curated single-column gallery). JS will unhide/populate on mobile. -->
-    <section id="mobile-gallery" class="mobile-gallery" hidden>
-        <div class="mobile-list" aria-live="polite"></div>
+    <!-- MOBILE EXPERIENCE (server-rendered so phones see images even without JS). -->
+    <section id="mobile-gallery" class="mobile-gallery">
+        <div class="mobile-list" aria-live="polite">
+            {% for f in mobile_photos %}
+              <a class="mobile-card"
+                 href="{{ url_for('view_image', variant='mobile', filename=f) }}">
+                <img
+                  src="{{ url_for('get_photo', variant='mobile', filename=f) }}"
+                  alt="Photo {{ loop.index }}"
+                  loading="{{ 'eager' if loop.index0 < 2 else 'lazy' }}"
+                  decoding="async">
+              </a>
+            {% endfor %}
+        </div>
     </section>
 
     <!-- Contact Section -->
