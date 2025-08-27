@@ -34,9 +34,12 @@ def list_photos(variant: str):
 
 @app.route('/')
 def index():
-    # Only pass Web3Forms key; photos are loaded by JS via /api/photos
+    # SSR fallback for mobile; JS can still enhance/replace it
     web3forms_key = os.environ.get('WEB3FORMS_KEY', '')
-    return render_template('index.html', web3forms_key=web3forms_key)
+    mobile_photos = list_photos('mobile')
+    return render_template('index.html',
+                           web3forms_key=web3forms_key,
+                           mobile_photos=mobile_photos)
 
 @app.route('/api/photos')
 def api_photos():
