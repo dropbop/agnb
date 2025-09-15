@@ -1,0 +1,21 @@
+{
+  "variant": "mobile",
+  "count": 3,
+  "photos": [
+    {
+      "filename": "001-812tokyo-mobile.jpg",
+      "url": "assets/photos/mobile/001-812tokyo-mobile.jpg",
+      "view_url": "view/?variant=mobile&file=001-812tokyo-mobile.jpg"
+    },
+    {
+      "filename": "002-svjyellow-mobile.jpg",
+      "url": "assets/photos/mobile/002-svjyellow-mobile.jpg",
+      "view_url": "view/?variant=mobile&file=002-svjyellow-mobile.jpg"
+    },
+    {
+      "filename": "003-991gt3rs-mobile.jpg",
+      "url": "assets/photos/mobile/003-991gt3rs-mobile.jpg",
+      "view_url": "view/?variant=mobile&file=003-991gt3rs-mobile.jpg"
+    }
+  ]
+}

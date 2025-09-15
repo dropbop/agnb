@@ -1,18 +1,31 @@
 # AllGasNoBrakes Photography
 
-## How to Upload New Photos
+Static site hosted via GitHub Pages. The `/docs` directory contains the build output that Pages serves.
 
-1. Navigate to the `static/photos/desktop` or `static/photos/mobile` directory in this repository
-2. Click "Add file" > "Upload files"
-3. Drag and drop your new photo files (JPG, PNG, or WebP format)
-4. Add a commit message like "Add new car photos from Feb shoot"
-5. Click "Commit changes"
+## Prerequisites
 
-Your photos will automatically be deployed to the website within a few minutes.
+- Python 3.9+ for the local build script (no additional packages required)
 
-## Photo Guidelines
+## Local Build & Preview
 
-- Use high-quality images (recommended resolution: at least 1920x1080)
-- Supported formats: JPG, JPEG, PNG, WebP
-- Keep file sizes reasonable (ideally under 2MB per image)
-- Images will be sorted alphabetically on the site, so name them accordingly (e.g., 001-ferrari.jpg, 002-porsche.jpg)
+1. Export your Web3Forms key so the contact form works: `export WEB3FORMS_KEY=...`
+2. Run the generator: `python scripts/build_static.py`
+3. Preview the site locally: `python -m http.server --directory docs`
+4. Open <http://localhost:8000> in a browser
+
+The build script regenerates the photo manifests, copies the photos and assets, and flattens the HTML templates into `/docs`.
+
+## Adding Photos
+
+1. Place desktop shots in `static/photos/desktop/`
+2. Place mobile-friendly crops in `static/photos/mobile/`
+3. Re-run `python scripts/build_static.py`
+4. Commit the updated files under `static/` and `docs/`
+
+Photos are sorted alpha-numerically, so use naming like `001-ferrari.jpg`, `002-porsche.jpg` to control ordering.
+
+## Deployment Notes
+
+- GitHub Pages should serve from the `docs/` folder on the default branch
+- Configure a GitHub Actions workflow (or manual build) to run the build script with `WEB3FORMS_KEY` available as an environment secret before publishing
+- Commit the generated `docs/` output so the site renders without an additional runtime

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AllGasNoBrakes Automotive Photography - full-resolution view">
+    <title>AllGasNoBrakes - Photo</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+    <link rel="stylesheet" href="../assets/css/default.css">
+    <style>
+        .fullsize-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--color-background);
+            padding: 20px;
+        }
+        .fullsize-image {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .image-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 20px;
+        }
+        .control-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: calc(var(--spacing-unit) * 2);
+            cursor: pointer;
+            transform: skewX(-8deg);
+            transition: all 0.3s var(--transition-smooth);
+            backdrop-filter: blur(10px);
+            color: var(--color-text);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .control-button:hover {
+            background: var(--color-accent);
+            transform: skewX(-8deg) scale(1.1);
+        }
+        .control-button span {
+            transform: skewX(8deg);
+        }
+        .view-caption {
+            margin-top: 16px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .view-error {
+            margin-top: 20px;
+            padding: 12px 18px;
+            background: rgba(231, 76, 60, 0.15);
+            border-left: 3px solid #e74c3c;
+            color: #e74c3c;
+            display: none;
+        }
+    </style>
+</head>
+<body data-assets-base="../assets">
+    <div class="fullsize-container">
+        <img id="fullsizeImage" class="fullsize-image" alt="Full size automotive photograph">
+        <p id="viewCaption" class="view-caption"></p>
+        <div id="viewError" class="view-error"></div>
+        <div class="image-controls">
+            <a id="viewBackLink" href="../" class="control-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3"></path>
+                    <path d="M16 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"></path>
+                    <path d="M12 15l-3-3 3-3"></path>
+                    <path d="M8 12h8"></path>
+                </svg>
+                <span>Back to Gallery</span>
+            </a>
+        </div>
+    </div>
+    <script src="../assets/js/viewer.js" defer></script>
+</body>
+</html>

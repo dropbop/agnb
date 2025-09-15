@@ -1,6 +1,16 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AllGasNoBrakes Photography - Professional automotive photography capturing speed, style, and precision">
+    <title>AllGasNoBrakes Photography</title>
 
-{% block body %}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+    <link rel="stylesheet" href="assets/css/default.css">
+</head>
+<body data-assets-base="assets">
 <header>
     <div class="header-content">
         <h1 class="site-title">AllGasNoBrakes</h1>
@@ -12,13 +22,10 @@
 </header>
 
 <main>
-    <!-- Anchor used by nav (works for either experience) -->
     <div id="gallery-anchor"></div>
 
-    <!-- DESKTOP EXPERIENCE (carousel of trios). Hidden inline to prevent flash; JS will show when ready. -->
     <section id="desktop-gallery" class="carousel-container" style="display:none">
         <div class="carousel" aria-live="polite"></div>
-
         <div class="controls">
             <button class="arrow-button" aria-label="Previous" id="prevButton">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -33,23 +40,20 @@
         </div>
     </section>
 
-    <!-- MOBILE EXPERIENCE (server-rendered so phones see images even without JS). -->
     <section id="mobile-gallery" class="mobile-gallery">
         <div class="mobile-list" aria-live="polite">
-            {% for f in mobile_photos %}
-              <a class="mobile-card"
-                 href="{{ url_for('view_image', variant='mobile', filename=f) }}">
-                <img
-                  src="{{ url_for('get_photo', variant='mobile', filename=f) }}"
-                  alt="Photo {{ loop.index }}"
-                  loading="{{ 'eager' if loop.index0 < 2 else 'lazy' }}"
-                  decoding="async">
-              </a>
-            {% endfor %}
+  <a class="mobile-card" href="view/?variant=mobile&file=001-812tokyo-mobile.jpg">
+    <img src="assets/photos/mobile/001-812tokyo-mobile.jpg" alt="Photo 1" loading="eager" decoding="async">
+  </a>
+  <a class="mobile-card" href="view/?variant=mobile&file=002-svjyellow-mobile.jpg">
+    <img src="assets/photos/mobile/002-svjyellow-mobile.jpg" alt="Photo 2" loading="eager" decoding="async">
+  </a>
+  <a class="mobile-card" href="view/?variant=mobile&file=003-991gt3rs-mobile.jpg">
+    <img src="assets/photos/mobile/003-991gt3rs-mobile.jpg" alt="Photo 3" loading="lazy" decoding="async">
+  </a>
         </div>
     </section>
 
-    <!-- Contact Section -->
     <section id="contact" class="contact">
         <div class="contact-content">
             <div class="contact-info">
@@ -68,20 +72,16 @@
                         <circle cx="12" cy="12" r="3.5"></circle>
                         <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" stroke="none"></circle>
                     </svg>
-                    <a href="https://instagram.com/AllGasNoBrakesMedia"
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       class="contact-link">
+                    <a href="https://instagram.com/AllGasNoBrakesMedia" target="_blank" rel="noopener noreferrer" class="contact-link">
                         AllGasNoBrakesMedia
                     </a>
                 </p>
             </div>
 
-            <!-- Contact Form -->
             <div class="contact-form-container">
                 <h2 class="form-title">Get In Touch</h2>
                 <form id="contactForm" class="contact-form">
-                    <input type="hidden" name="access_key" value="{{ web3forms_key|default('YOUR_ACCESS_KEY_HERE') }}">
+                    <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
 
                     <div class="form-group">
                         <label for="name">Name</label>
@@ -114,4 +114,7 @@
         </div>
     </section>
 </main>
-{% endblock %}
+
+<script src="assets/js/script.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AllGasNoBrakes Photography - Professional automotive photography capturing speed, style, and precision">
+    <title>AllGasNoBrakes Photography</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+    <link rel="stylesheet" href="assets/css/default.css">
+</head>
+<body data-assets-base="assets">
+<header>
+    <div class="header-content">
+        <h1 class="site-title">AllGasNoBrakes</h1>
+        <nav>
+            <a href="#gallery-anchor">Portfolio</a>
+            <a href="#contact">Contact</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+    <div id="gallery-anchor"></div>
+
+    <section id="desktop-gallery" class="carousel-container" style="display:none">
+        <div class="carousel" aria-live="polite"></div>
+        <div class="controls">
+            <button class="arrow-button" aria-label="Previous" id="prevButton">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <button class="arrow-button" aria-label="Next" id="nextButton">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+    </section>
+
+    <section id="mobile-gallery" class="mobile-gallery">
+        <div class="mobile-list" aria-live="polite">
+{{MOBILE_GALLERY}}
+        </div>
+    </section>
+
+    <section id="contact" class="contact">
+        <div class="contact-content">
+            <div class="contact-info">
+                <p class="contact-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                        <path d="m3 7 9 6 9-6"></path>
+                    </svg>
+                    <a href="mailto:AllGasNoBrakes@tuta.com" class="contact-link">
+                        AllGasNoBrakes@tuta.com
+                    </a>
+                </p>
+                <p class="contact-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="4.5"></rect>
+                        <circle cx="12" cy="12" r="3.5"></circle>
+                        <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" stroke="none"></circle>
+                    </svg>
+                    <a href="https://instagram.com/AllGasNoBrakesMedia" target="_blank" rel="noopener noreferrer" class="contact-link">
+                        AllGasNoBrakesMedia
+                    </a>
+                </p>
+            </div>
+
+            <div class="contact-form-container">
+                <h2 class="form-title">Get In Touch</h2>
+                <form id="contactForm" class="contact-form">
+                    <input type="hidden" name="access_key" value="{{WEB3FORMS_KEY}}">
+
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" placeholder="Your Name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="Your Email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" placeholder="Tell us about your project" rows="4" required></textarea>
+                    </div>
+
+                    <input type="checkbox" name="botcheck" style="display:none;">
+
+                    <button type="submit" class="submit-button">
+                        <span>Send Message</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m5 12 14 0"></path>
+                            <path d="m12 5 7 7-7 7"></path>
+                        </svg>
+                    </button>
+
+                    <div id="formResult" class="form-result"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="assets/js/script.js" defer></script>
+</body>
+</html>
