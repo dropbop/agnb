@@ -1,31 +1,26 @@
 # AllGasNoBrakes Photography
 
-Static site hosted via GitHub Pages. The `/docs` directory contains the build output that Pages serves.
+Static site hosted via GitHub Pages. Everything that ships lives under `docs/`—there's no build step or template source anymore.
 
-## Prerequisites
+## Repo Layout
 
-- Python 3.9+ for the local build script (no additional packages required)
+- `docs/index.html` – landing page + desktop carousel/mobile gallery toggle
+- `docs/view/index.html` – full-screen view for a single photo
+- `docs/assets/` – CSS, JS, and the `photos/` directories referenced by the pages
+- `docs/assets/js/photos.js` – declarative list of files to show in each gallery variant
 
-## Local Build & Preview
+## Updating Photos
 
-1. Export your Web3Forms key so the contact form works: `export WEB3FORMS_KEY=...`
-2. Run the generator: `python scripts/build_static.py`
-3. Preview the site locally: `python -m http.server --directory docs`
-4. Open <http://localhost:8000> in a browser
+1. Drop the new image into `docs/assets/photos/desktop/` or `docs/assets/photos/mobile/`
+2. Append the filename to the matching array in `docs/assets/js/photos.js` (order controls display order)
+3. Commit and push – Pages publishes the updated `docs/` tree automatically
 
-The build script regenerates the photo manifests, copies the photos and assets, and flattens the HTML templates into `/docs`.
+Keep filenames web-safe; the scripts handle URL encoding for spaces or capitalisation.
 
-## Adding Photos
+## Local Preview
 
-1. Place desktop shots in `static/photos/desktop/`
-2. Place mobile-friendly crops in `static/photos/mobile/`
-3. Re-run `python scripts/build_static.py`
-4. Commit the updated files under `static/` and `docs/`
+```
+python3 -m http.server --directory docs
+```
 
-Photos are sorted alpha-numerically, so use naming like `001-ferrari.jpg`, `002-porsche.jpg` to control ordering.
-
-## Deployment Notes
-
-- GitHub Pages should serve from the `docs/` folder on the default branch
-- Configure a GitHub Actions workflow (or manual build) to run the build script with `WEB3FORMS_KEY` available as an environment secret before publishing
-- Commit the generated `docs/` output so the site renders without an additional runtime
+Then open <http://localhost:8000>. The contact form still posts to Web3Forms – set your key directly in `docs/index.html` if you need to change it.

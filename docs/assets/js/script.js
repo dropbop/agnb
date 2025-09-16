@@ -40,43 +40,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ======== API ========
-    const manifestBase = document.body.getAttribute('data-assets-base') || 'assets';
-    const manifestCache = {};
+    const manifest = window.PHOTO_MANIFEST || {};
 
-    async function fetchPhotos(which) {
-        if (manifestCache[which]) {
-            return manifestCache[which];
-        }
-
-        const manifestPath = manifestBase.replace(/\/$/, '') + '/photos.' + which + '.json';
-
-        let res;
-        try { res = await fetch(manifestPath, { cache: 'no-cache' }); }
-        catch (err) {
-            throw new Error('Failed to request photo manifest: ' + err.message);
-        }
-
-        let data;
-        try { data = await res.json(); }
-        catch (e) { throw new Error('Failed to parse photo JSON'); }
-
-        if (!res.ok) {
-            throw new Error((data && data.error) || 'Failed to load photos');
-        }
-
-        const photos = data.photos || [];
-        manifestCache[which] = photos;
-        return photos;
+    function buildPhotos(which) {
+        const files = manifest[which] || [];
+        const base = 'assets/photos/' + which + '/';
+        return files.map(function(file) {
+            const encoded = encodeURIComponent(file);
+            return {
+                filename: file,
+                url: base + encoded,
+                view_url: 'view/?variant=' + which + '&file=' + encoded
+            };
+        });
     }
 
-    async function loadAndRender(which) {
-        try {
-            const photos = await fetchPhotos(which);
-            if (which === 'desktop') renderDesktop(photos);
-            else renderMobile(photos);
-        } catch (err) {
-            console.error(err);
-        }
+    function loadAndRender(which) {
+        const photos = buildPhotos(which);
+        if (which === 'desktop') renderDesktop(photos);
+        else renderMobile(photos);
     }
 
     function clearContainers() {
